@@ -7,12 +7,11 @@ import com.baomidou.mybatisplus.annotation.TableName;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.persistence.*;
 import lombok.Data;
-import org.springframework.data.annotation.Id;
 
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "ticket_record",)
+@Table(name = "ticket_record")
 @TableName("ticket_record")
 @Data
 public class TicketRecord {
