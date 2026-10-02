@@ -47,6 +47,10 @@ public class SysClassController {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new Result<Integer>
                     (400, "班级已存在", null));
         }
+        if (result != 1) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new Result<>(500, "添加班级失败", null));
+        }
         return ResponseEntity.ok(Result.success(result));
     }
 
@@ -62,8 +66,8 @@ public class SysClassController {
                     (400, "班级id或名字过长", null));
         }
         if(result == -4){
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new Result<Integer>
-                    (400, "班级不存在", null));
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new Result<Integer>
+                    (404, "班级不存在", null));
         }
         if (result != 1) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
