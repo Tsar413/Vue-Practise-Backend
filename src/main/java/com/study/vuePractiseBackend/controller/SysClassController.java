@@ -99,7 +99,6 @@ public class SysClassController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(new Result<>(500, "修改班级失败", null));
         }
-        // TODO SysUser结果
         return ResponseEntity.ok(Result.success(result));
     }
 

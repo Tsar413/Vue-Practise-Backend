@@ -75,8 +75,10 @@ public class SysClassServiceImpl extends ServiceImpl<SysClassMapper, SysClass> i
     @Override
     @Transactional
     public Integer deleteById(String id) {
-        // 用户与工作空间由用户Service统一清理；任一失败使整个班级操作回滚。
-        // 先删除关联用户，再删除班级。
+        if (id == null || id.isBlank()) {
+            throw new IllegalArgumentException("班级编号不能为空");
+        }
+        id = id.trim();
         List<SysUser> sysUsers = findClassUsers(id);
         for (SysUser sysUser : sysUsers) {
             Integer result = sysUserService.deleteById(sysUser.getId());
@@ -84,12 +86,9 @@ public class SysClassServiceImpl extends ServiceImpl<SysClassMapper, SysClass> i
                 throw new IllegalStateException("删除班级关联用户失败");
             }
         }
-
         if (baseMapper.deleteById(id) != 1) {
             throw new IllegalStateException("删除班级失败");
         }
-
-        // LoginToken与项目数据清理由用户、工作空间Service中的TODO统一处理
         return 1;
     }
 

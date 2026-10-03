@@ -32,6 +32,12 @@ public class SysLoginToken {
     @TableField("token_hash")
     private String tokenHash;
 
+    @JsonIgnore
+    @ToString.Exclude
+    @Column(name = "api_access_code", unique = true, length = 64)
+    @TableField("api_access_code")
+    private String apiAccessCode;
+
     @JsonFormat(timezone = "GMT+8", pattern = "yyyy-MM-dd HH:mm:ss")
     @Column(columnDefinition = "DATETIME", name = "create_time")
     @TableField(value = "create_time")

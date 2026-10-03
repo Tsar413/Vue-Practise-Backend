@@ -1,17 +1,32 @@
 package com.study.vuePractiseBackend.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.study.vuePractiseBackend.entity.SysClass;
+import com.study.vuePractiseBackend.entity.SysUser;
 import com.study.vuePractiseBackend.entity.SysWorkspace;
+import com.study.vuePractiseBackend.mapper.SysClassMapper;
+import com.study.vuePractiseBackend.mapper.SysUserMapper;
 import com.study.vuePractiseBackend.mapper.SysWorkspaceMapper;
 import com.study.vuePractiseBackend.service.SysWorkspaceService;
+import jakarta.annotation.Resource;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Service
 public class SysWorkspaceServiceImpl extends ServiceImpl<SysWorkspaceMapper, SysWorkspace> implements SysWorkspaceService {
+
+    @Resource
+    private SysUserMapper sysUserMapper;
+
+    @Resource
+    private SysClassMapper sysClassMapper;
+
     /**
      * 不存在则创建，已存在则同步状态。
      * 恢复历史空间时保留原来的ID和项目数据。
@@ -84,6 +99,77 @@ public class SysWorkspaceServiceImpl extends ServiceImpl<SysWorkspaceMapper, Sys
         if (baseMapper.deleteById(workspace.getId()) != 1) {
             throw new IllegalStateException("删除工作空间失败");
         }
+    }
+
+    @Override
+    public List<SysWorkspace> getWorkspacesClassId(String id) {
+        if (id == null || id.isBlank()) {
+            throw new IllegalArgumentException("班级编号不能为空");
+        }
+        // 第一次查询：只取学生学号
+        QueryWrapper<SysUser> userWrapper = new QueryWrapper<>();
+        userWrapper.select("id");
+        userWrapper.eq("class_id", id.trim());
+        userWrapper.eq("role", "STUDENT");
+
+        List<SysUser> users = sysUserMapper.selectList(userWrapper);
+        // 必须处理空集合，避免空IN条件带来的问题
+        if (users.isEmpty()) {
+            return new ArrayList<>();
+        }
+        List<String> studentIds = users.stream()
+                .map(SysUser::getId)
+                .toList();
+
+        // 第二次查询：一次性获取这些学生的工作空间
+        QueryWrapper<SysWorkspace> workspaceWrapper = new QueryWrapper<>();
+        workspaceWrapper.in("student_id", studentIds);
+        workspaceWrapper.orderByAsc("student_id");
+        return baseMapper.selectList(workspaceWrapper);
+    }
+
+    @Override
+    @Transactional
+    public Integer changeWorkspaceStatus(String studentId, Integer status) {
+        if (studentId == null || studentId.isBlank()) {
+            return -2;
+        }
+        studentId = studentId.trim();
+        if (studentId.length() > 50) {
+            return -3;
+        }
+        if (status == null || (status != 0 && status != 1)) {
+            return -5;
+        }
+        SysWorkspace workspace = findByStudentId(studentId);
+        if (workspace == null) {
+            return -4;
+        }
+        // 启用前检查资格，即使空间已经启用也要检查
+        if (status == 1) {
+            SysUser user = sysUserMapper.selectById(studentId);
+            if (user == null) {
+                return -6;
+            }
+            if (!"STUDENT".equals(user.getRole())) {
+                return -7;
+            }
+            if (!Integer.valueOf(1).equals(user.getStatus())) {
+                return -8;
+            }
+            if (user.getClassId() == null || user.getClassId().isBlank()) {
+                return -10;
+            }
+            SysClass sysClass = sysClassMapper.selectById(user.getClassId());
+            if (sysClass == null) {
+                return -10;
+            }
+            if (!Integer.valueOf(1).equals(sysClass.getStatus())) {
+                return -11;
+            }
+        }
+        updateWorkspaceStatus(workspace, status);
+        return 1;
     }
 
     /**

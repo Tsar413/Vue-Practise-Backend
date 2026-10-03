@@ -8,6 +8,7 @@ import com.study.vuePractiseBackend.entity.SysClass;
 import com.study.vuePractiseBackend.entity.SysUser;
 import com.study.vuePractiseBackend.mapper.SysClassMapper;
 import com.study.vuePractiseBackend.mapper.SysUserMapper;
+import com.study.vuePractiseBackend.service.SysLoginService;
 import com.study.vuePractiseBackend.service.SysUserService;
 import com.study.vuePractiseBackend.service.SysWorkspaceService;
 import com.study.vuePractiseBackend.util.PasswordUtil;
@@ -36,6 +37,9 @@ public class SysUserServiceImpl extends ServiceImpl<SysUserMapper, SysUser> impl
 
     @Resource
     private PlatformTransactionManager transactionManager;
+
+    @Resource
+    private SysLoginService sysLoginService;
 
     @Override
     @Transactional
@@ -275,40 +279,45 @@ public class SysUserServiceImpl extends ServiceImpl<SysUserMapper, SysUser> impl
         if (id.isBlank()) {
             return -2;
         }
-        if(id.length() > 50){
+        if (id.length() > 50) {
             return -3;
         }
         if (status == null || (status != 0 && status != 1)) {
             return -5;
         }
         SysUser sysUser = baseMapper.selectById(id);
-        if(sysUser == null){
+        if (sysUser == null) {
             return -4;
         }
         sysUser.setStatus(status);
-        LocalDateTime now = LocalDateTime.now();
-        sysUser.setUpdateTime(now);
-        int result = baseMapper.updateById(sysUser);
-        if (result != 1) {
+        sysUser.setUpdateTime(LocalDateTime.now());
+        if (baseMapper.updateById(sysUser) != 1) {
             throw new IllegalStateException("修改用户状态失败");
         }
         if ("STUDENT".equals(sysUser.getRole())) {
             sysWorkspaceService.syncStudentWorkspaceStatus(id, status);
         }
-        // TODO LoginToken待做
+        if (status == 0) {
+            sysLoginService.revokeByUserId(id);
+        }
         return 1;
     }
 
     @Override
     @Transactional
     public Integer deleteById(String id) {
-        int result = baseMapper.deleteById(id);
-        if (result != 1) {
+        if (id == null || id.isBlank()) {
+            throw new IllegalArgumentException("用户编号不能为空");
+        }
+        id = id.trim();
+        // 删除网页登录凭证和长期API访问码
+        sysLoginService.deleteByUserId(id);
+        // 项目数据清理TODO保留在工作空间删除方法中
+        sysWorkspaceService.deleteWorkspaceIfPresent(id);
+        // 最后删除用户；不存在或删除失败时，前面的操作一起回滚
+        if (baseMapper.deleteById(id) != 1) {
             throw new IllegalStateException("删除用户失败");
         }
-        sysWorkspaceService.deleteWorkspaceIfPresent(id);
-        // TODO LoginToken待做
-        // 项目数据清理TODO统一保留在Workspace Service的删除方法中
         return 1;
     }
 }
