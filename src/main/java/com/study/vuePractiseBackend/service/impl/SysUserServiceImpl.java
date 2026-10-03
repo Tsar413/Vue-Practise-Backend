@@ -1,17 +1,15 @@
 package com.study.vuePractiseBackend.service.impl;
 
-import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.study.vuePractiseBackend.dto.StudentImportResultDTO;
 import com.study.vuePractiseBackend.dto.SysUserDTO;
 import com.study.vuePractiseBackend.entity.SysClass;
 import com.study.vuePractiseBackend.entity.SysUser;
-import com.study.vuePractiseBackend.entity.SysWorkspace;
 import com.study.vuePractiseBackend.mapper.SysClassMapper;
 import com.study.vuePractiseBackend.mapper.SysUserMapper;
-import com.study.vuePractiseBackend.mapper.SysWorkspaceMapper;
 import com.study.vuePractiseBackend.service.SysUserService;
+import com.study.vuePractiseBackend.service.SysWorkspaceService;
 import com.study.vuePractiseBackend.util.PasswordUtil;
 import com.study.vuePractiseBackend.util.StudentExcelUtil;
 import jakarta.annotation.Resource;
@@ -31,7 +29,7 @@ import java.util.List;
 public class SysUserServiceImpl extends ServiceImpl<SysUserMapper, SysUser> implements SysUserService {
 
     @Resource
-    private SysWorkspaceMapper sysWorkspaceMapper;
+    private SysWorkspaceService sysWorkspaceService;
 
     @Resource
     private SysClassMapper sysClassMapper;
@@ -99,16 +97,7 @@ public class SysUserServiceImpl extends ServiceImpl<SysUserMapper, SysUser> impl
         }
 
         if ("STUDENT".equals(role)) {
-            SysWorkspace sysWorkspace = new SysWorkspace();
-            sysWorkspace.setStudentId(id);
-            sysWorkspace.setStatus(1);
-            sysWorkspace.setCreateTime(now);
-            sysWorkspace.setUpdateTime(now);
-
-            int workspaceResult = sysWorkspaceMapper.insert(sysWorkspace);
-            if (workspaceResult != 1) {
-                throw new IllegalStateException("创建工作空间失败");
-            }
+            sysWorkspaceService.ensureStudentWorkspace(id, 1);
         }
 
         return 1;
@@ -265,43 +254,14 @@ public class SysUserServiceImpl extends ServiceImpl<SysUserMapper, SysUser> impl
         if (result != 1) {
             throw new IllegalStateException("修改用户失败");
         }
-        if(!role.equals(changeRole)){
-            QueryWrapper<SysWorkspace> wrapper1 = new QueryWrapper<SysWorkspace>();
-            wrapper1.eq("student_id", id);
-            List<SysWorkspace> sysWorkspaces = sysWorkspaceMapper.selectList(wrapper1);
-            if("STUDENT".equals(role)){
-                if(sysWorkspaces.isEmpty()){
-                    SysWorkspace sysWorkspace = new SysWorkspace();
-                    sysWorkspace.setStudentId(id);
-                    sysWorkspace.setStatus(sysUser.getStatus());
-                    sysWorkspace.setCreateTime(now);
-                    sysWorkspace.setUpdateTime(now);
-
-                    int workspaceResult = sysWorkspaceMapper.insert(sysWorkspace);
-                    if (workspaceResult != 1) {
-                        throw new IllegalStateException("创建工作空间失败");
-                    }
-                } else {
-                    SysWorkspace sysWorkspace = sysWorkspaces.getFirst();
-                    sysWorkspace.setStatus(sysUser.getStatus());
-                    sysWorkspace.setUpdateTime(now);
-                    int workspaceResult = sysWorkspaceMapper.updateById(sysWorkspace);
-                    if (workspaceResult != 1) {
-                        throw new IllegalStateException("修改工作空间失败");
-                    }
-                }
+        if (!role.equals(changeRole)) {
+            if ("STUDENT".equals(role)) {
+                sysWorkspaceService.ensureStudentWorkspace(id, sysUser.getStatus());
             } else {
-                if (!sysWorkspaces.isEmpty()) {
-                    SysWorkspace sysWorkspace = sysWorkspaces.getFirst();
-                    sysWorkspace.setStatus(0);
-                    sysWorkspace.setUpdateTime(now);
-                    int workspaceResult = sysWorkspaceMapper.updateById(sysWorkspace);
-                    if (workspaceResult != 1) {
-                        throw new IllegalStateException("修改工作空间失败");
-                    }
-                }
+                sysWorkspaceService.pauseWorkspaceIfPresent(id);
             }
         }
+
         return 1;
     }
 
@@ -332,20 +292,8 @@ public class SysUserServiceImpl extends ServiceImpl<SysUserMapper, SysUser> impl
         if (result != 1) {
             throw new IllegalStateException("修改用户状态失败");
         }
-        if("STUDENT".equals(sysUser.getRole())){
-            QueryWrapper<SysWorkspace> wrapper1 = new QueryWrapper<SysWorkspace>();
-            wrapper1.eq("student_id", id);
-            List<SysWorkspace> sysWorkspaces = sysWorkspaceMapper.selectList(wrapper1);
-            if (sysWorkspaces.isEmpty()) {
-                throw new IllegalStateException("学生工作空间不存在");
-            }
-            SysWorkspace sysWorkspace = sysWorkspaces.getFirst();
-            sysWorkspace.setStatus(status);
-            sysWorkspace.setUpdateTime(now);
-            int workspaceResult = sysWorkspaceMapper.updateById(sysWorkspace);
-            if (workspaceResult != 1) {
-                throw new IllegalStateException("修改工作空间失败");
-            }
+        if ("STUDENT".equals(sysUser.getRole())) {
+            sysWorkspaceService.syncStudentWorkspaceStatus(id, status);
         }
         // TODO LoginToken待做
         return 1;
@@ -356,16 +304,11 @@ public class SysUserServiceImpl extends ServiceImpl<SysUserMapper, SysUser> impl
     public Integer deleteById(String id) {
         int result = baseMapper.deleteById(id);
         if (result != 1) {
-            throw new IllegalStateException("删除用户状态失败");
+            throw new IllegalStateException("删除用户失败");
         }
-        QueryWrapper<SysWorkspace> wrapper1 = new QueryWrapper<SysWorkspace>();
-        wrapper1.eq("student_id", id);
-        int result1 = sysWorkspaceMapper.delete(wrapper1);
-        if(result1 < 0){
-            throw new IllegalStateException("删除用户空间失败");
-        }
+        sysWorkspaceService.deleteWorkspaceIfPresent(id);
         // TODO LoginToken待做
-        // TODO 各项目workspace删除
+        // 项目数据清理TODO统一保留在Workspace Service的删除方法中
         return 1;
     }
 }

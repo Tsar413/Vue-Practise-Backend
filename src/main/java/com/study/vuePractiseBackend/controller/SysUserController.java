@@ -1,5 +1,6 @@
 package com.study.vuePractiseBackend.controller;
 
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.study.vuePractiseBackend.common.Result;
 import com.study.vuePractiseBackend.dto.StudentImportResultDTO;
 import com.study.vuePractiseBackend.dto.SysUserDTO;
@@ -104,8 +105,17 @@ public class SysUserController {
         return ResponseEntity.ok(Result.success(sysUser));
     }
 
+    @GetMapping("/classes/{id}")
+    public ResponseEntity<Result<List<SysUser>>> getClassesUsers(@PathVariable("id") String id){
+        QueryWrapper<SysUser> wrapper = new QueryWrapper<>();
+        wrapper.eq("class_id", id.trim());
+        wrapper.eq("role", "STUDENT");
+        wrapper.orderByAsc("id");
+        return ResponseEntity.ok(Result.success(service.list(wrapper)));
+    }
+
     @PutMapping("/one")
-    public ResponseEntity<Result<Integer>> changeClass(@RequestBody SysUserDTO sysUserDTO){
+    public ResponseEntity<Result<Integer>> changeUser(@RequestBody SysUserDTO sysUserDTO){
         Integer result = service.changeUser(sysUserDTO);
         if (result == -2) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
@@ -185,13 +195,14 @@ public class SysUserController {
     }
 
     @DeleteMapping("/one/{id}")
-    public ResponseEntity<Result<Integer>> deleteClass(@PathVariable("id") String id) {
+    public ResponseEntity<Result<Integer>> deleteUser(@PathVariable("id") String id) {
         Integer result = service.deleteById(id);
         if (!Integer.valueOf(1).equals(result)) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(new Result<>(500, "删除用户失败", null));
         }
-
         return ResponseEntity.ok(Result.success(result));
     }
+
+
 }

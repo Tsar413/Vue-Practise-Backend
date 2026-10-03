@@ -1,16 +1,13 @@
 package com.study.vuePractiseBackend.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
-import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.study.vuePractiseBackend.dto.SysClassDTO;
 import com.study.vuePractiseBackend.entity.SysClass;
 import com.study.vuePractiseBackend.entity.SysUser;
-import com.study.vuePractiseBackend.entity.SysWorkspace;
 import com.study.vuePractiseBackend.mapper.SysClassMapper;
-import com.study.vuePractiseBackend.mapper.SysUserMapper;
-import com.study.vuePractiseBackend.mapper.SysWorkspaceMapper;
 import com.study.vuePractiseBackend.service.SysClassService;
+import com.study.vuePractiseBackend.service.SysUserService;
 import jakarta.annotation.Resource;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -22,10 +19,7 @@ import java.util.List;
 public class SysClassServiceImpl extends ServiceImpl<SysClassMapper, SysClass> implements SysClassService {
 
     @Resource
-    private SysUserMapper sysUserMapper;
-
-    @Resource
-    private SysWorkspaceMapper sysWorkspaceMapper;
+    private SysUserService sysUserService;
 
     @Override
     @Transactional
@@ -81,29 +75,21 @@ public class SysClassServiceImpl extends ServiceImpl<SysClassMapper, SysClass> i
     @Override
     @Transactional
     public Integer deleteById(String id) {
-        int result = baseMapper.deleteById(id);
-        if (result != 1) {
-            throw new IllegalStateException("删除用户状态失败");
-        }
-        QueryWrapper<SysUser> wrapper2 = new QueryWrapper<SysUser>();
-        wrapper2.eq("class_id", id);
-        List<SysUser> sysUsers = sysUserMapper.selectList(wrapper2);
+        // 用户与工作空间由用户Service统一清理；任一失败使整个班级操作回滚。
+        // 先删除关联用户，再删除班级。
+        List<SysUser> sysUsers = findClassUsers(id);
         for (SysUser sysUser : sysUsers) {
-            UpdateWrapper<SysWorkspace> wrapper3 = new UpdateWrapper<SysWorkspace>();
-            wrapper3.eq("student_id", sysUser.getId());
-            int result2 = sysWorkspaceMapper.delete(wrapper3);
-            if (result2 != 1) {
-                throw new IllegalStateException("删除工作空间状态失败");
+            Integer result = sysUserService.deleteById(sysUser.getId());
+            if (!Integer.valueOf(1).equals(result)) {
+                throw new IllegalStateException("删除班级关联用户失败");
             }
         }
-        QueryWrapper<SysUser> wrapper1 = new QueryWrapper<SysUser>();
-        wrapper1.eq("class_id", id);
-        int result1 = sysUserMapper.delete(wrapper1);
-        if (result1 < 0) {
-            throw new IllegalStateException("删除学生失败");
+
+        if (baseMapper.deleteById(id) != 1) {
+            throw new IllegalStateException("删除班级失败");
         }
-        // TODO 各项目workspace删除
-        // TODO LoginToken待做
+
+        // LoginToken与项目数据清理由用户、工作空间Service中的TODO统一处理
         return 1;
     }
 
@@ -134,27 +120,19 @@ public class SysClassServiceImpl extends ServiceImpl<SysClassMapper, SysClass> i
         if (result != 1) {
             throw new IllegalStateException("修改班级状态失败");
         }
-        UpdateWrapper<SysUser> wrapper1 = new UpdateWrapper<SysUser>();
-        wrapper1.set("status", status);
-        wrapper1.eq("class_id", id);
-        wrapper1.set("update_time", now);
-        int result1 = sysUserMapper.update(wrapper1);
-        if (result1 < 0) {
-            throw new IllegalStateException("修改学生状态失败");
-        }
-        QueryWrapper<SysUser> wrapper2 = new QueryWrapper<SysUser>();
-        wrapper2.eq("class_id", id);
-        List<SysUser> sysUsers = sysUserMapper.selectList(wrapper2);
-        for (SysUser sysUser : sysUsers) {
-            UpdateWrapper<SysWorkspace> wrapper3 = new UpdateWrapper<SysWorkspace>();
-            wrapper3.set("status", status);
-            wrapper3.eq("student_id", sysUser.getId());
-            wrapper3.set("update_time", now);
-            int result2 = sysWorkspaceMapper.update(wrapper3);
-            if (result2 != 1) {
-                throw new IllegalStateException("修改工作空间状态失败");
+        // 即使班级状态未变化，也同步关联用户及其工作空间。
+        for (SysUser sysUser : findClassUsers(id)) {
+            Integer userResult = sysUserService.changeUserStatus(sysUser.getId(), status);
+            if (!Integer.valueOf(1).equals(userResult)) {
+                throw new IllegalStateException("修改班级关联用户状态失败");
             }
         }
         return 1;
+    }
+
+    private List<SysUser> findClassUsers(String classId) {
+        QueryWrapper<SysUser> wrapper = new QueryWrapper<>();
+        wrapper.eq("class_id", classId);
+        return sysUserService.list(wrapper);
     }
 }
