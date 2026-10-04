@@ -312,7 +312,7 @@ public class SysUserServiceImpl extends ServiceImpl<SysUserMapper, SysUser> impl
         id = id.trim();
         // 删除网页登录凭证和长期API访问码
         sysLoginService.deleteByUserId(id);
-        // 项目数据清理TODO保留在工作空间删除方法中
+        // 项目数据清理, 工作空间删除
         sysWorkspaceService.deleteWorkspaceIfPresent(id);
         // 最后删除用户；不存在或删除失败时，前面的操作一起回滚
         if (baseMapper.deleteById(id) != 1) {

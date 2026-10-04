@@ -21,4 +21,10 @@ public interface SysWorkspaceService extends IService<SysWorkspace> {
     List<SysWorkspace> getWorkspacesClassId(String id);
 
     Integer changeWorkspaceStatus(String studentId, Integer status);
+
+    Integer initializeTicketClass(String classId);
+
+    Integer initializeRepairClass(String classId);
+
+    Integer resetWorkspace(String studentId, String project);
 }

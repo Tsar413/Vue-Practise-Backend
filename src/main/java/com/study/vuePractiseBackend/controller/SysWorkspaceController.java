@@ -83,8 +83,87 @@ public class SysWorkspaceController {
 
     @PostMapping("/one/{id}/reset")
     public ResponseEntity<Result<Integer>> resetWorkspace(@PathVariable("id") String studentId, @RequestParam("project") String project) {
+        Integer result = service.resetWorkspace(studentId, project);
+        if (Integer.valueOf(-2).equals(result)) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(new Result<>(400, "学号为空", null));
+        }
+        if (Integer.valueOf(-3).equals(result)) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(new Result<>(400, "学号过长", null));
+        }
+        if (Integer.valueOf(-4).equals(result)) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(new Result<>(404, "工作空间不存在", null));
+        }
+        if (Integer.valueOf(-5).equals(result)) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(new Result<>(400, "项目参数只能为TICKET、REPAIR或ALL", null));
+        }
+        if (Integer.valueOf(-6).equals(result)) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(new Result<>(404, "用户不存在", null));
+        }
+        if (Integer.valueOf(-7).equals(result)) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(new Result<>(400, "只能重置学生的工作空间", null));
+        }
+        if (!Integer.valueOf(1).equals(result)) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new Result<>(500, "重置工作空间失败", null));
+        }
+        return ResponseEntity.ok(Result.success(result));
+    }
 
-        return ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED)
-                .body(new Result<>(501, "未完待续", null));
+    @PostMapping("classes/{classId}/ticket/initialize")
+    public ResponseEntity<Result<Integer>> initializeTicketClass(@PathVariable("classId") String classId){
+        Integer result = service.initializeTicketClass(classId);
+        if (Integer.valueOf(-2).equals(result)) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(new Result<>(400, "班级编号为空", null));
+        }
+        if (Integer.valueOf(-3).equals(result)) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(new Result<>(400, "班级编号过长", null));
+        }
+        if (Integer.valueOf(-4).equals(result)) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(new Result<>(404, "班级不存在", null));
+        }
+        if (Integer.valueOf(-5).equals(result)) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(new Result<>(400, "班级内没有学生", null));
+        }
+        if (!Integer.valueOf(1).equals(result)) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new Result<>(500, "初始化失败", null));
+        }
+        return ResponseEntity.ok(Result.success(result));
+    }
+
+    @PostMapping("/classes/{classId}/repair/initialize")
+    public ResponseEntity<Result<Integer>> initializeRepairClass(@PathVariable("classId") String classId) {
+        Integer result = service.initializeRepairClass(classId);
+        if (Integer.valueOf(-2).equals(result)) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(new Result<>(400, "班级编号为空", null));
+        }
+        if (Integer.valueOf(-3).equals(result)) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(new Result<>(400, "班级编号过长", null));
+        }
+        if (Integer.valueOf(-4).equals(result)) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(new Result<>(404, "班级不存在", null));
+        }
+        if (Integer.valueOf(-5).equals(result)) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(new Result<>(400, "班级内没有学生", null));
+        }
+        if (!Integer.valueOf(1).equals(result)) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new Result<>(500, "初始化维修数据失败", null));
+        }
+        return ResponseEntity.ok(Result.success(result));
     }
 }
