@@ -165,4 +165,9 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(exception.getStatusCode())
                 .body(new Result<>(code, exception.getReason(), null));
     }
+
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<Result<Void>> handleIllegalArgument(IllegalArgumentException exception) {
+        return error(HttpStatus.BAD_REQUEST, exception.getMessage());
+    }
 }

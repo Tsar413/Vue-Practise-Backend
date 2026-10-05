@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.study.vuePractiseBackend.common.Result;
 import com.study.vuePractiseBackend.dto.TicketActivityDTO;
 import com.study.vuePractiseBackend.dto.TicketActivityStatusDTO;
+import com.study.vuePractiseBackend.dto.TicketActivityUpdateDTO;
 import com.study.vuePractiseBackend.entity.TicketActivity;
 import com.study.vuePractiseBackend.entity.TicketRecord;
 import com.study.vuePractiseBackend.entity.TicketUser;
@@ -154,6 +155,24 @@ public class TicketController {
             @RequestBody TicketActivityStatusDTO dto) {
         TicketActivity result = ticketActivityService.changeActivityStatus(workspaceId, activityId, dto);
         return ResponseEntity.ok(Result.success(result));
+    }
+
+    @PutMapping("/activities/{activityId}")
+    public ResponseEntity<Result<TicketActivity>> updateActivity(
+            @RequestAttribute(ApiAccessInterceptor.WORKSPACE_ID) Long workspaceId,
+            @PathVariable("activityId") Long activityId,
+            @RequestBody TicketActivityUpdateDTO dto) {
+
+        return ResponseEntity.ok(Result.success(ticketActivityService.updateActivity(workspaceId, activityId, dto)));
+    }
+
+    @DeleteMapping("/activities/{activityId}")
+    public ResponseEntity<Result<Integer>> deleteActivity(
+            @RequestAttribute(ApiAccessInterceptor.WORKSPACE_ID) Long workspaceId,
+            @PathVariable("activityId") Long activityId,
+            @RequestParam("operatorId") Long operatorId) {
+
+        return ResponseEntity.ok(Result.success(ticketActivityService.deleteActivity(workspaceId, activityId, operatorId)));
     }
 
     @PostMapping("/activities/{activityId}/records")
