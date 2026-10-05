@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
 import org.springframework.web.multipart.support.MissingServletRequestPartException;
+import org.springframework.web.server.ResponseStatusException;
 
 @Slf4j
 @RestControllerAdvice
@@ -156,5 +157,12 @@ public class GlobalExceptionHandler {
                 HttpStatus.PAYLOAD_TOO_LARGE,
                 "上传文件或请求超过大小限制，单个Excel文件不能超过5MB"
         );
+    }
+
+    @ExceptionHandler(ResponseStatusException.class)
+    public ResponseEntity<Result<Object>> handleResponseStatusException(ResponseStatusException exception) {
+        int code = exception.getStatusCode().value();
+        return ResponseEntity.status(exception.getStatusCode())
+                .body(new Result<>(code, exception.getReason(), null));
     }
 }
