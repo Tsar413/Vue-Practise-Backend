@@ -14,9 +14,7 @@ import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Locale;
+import java.util.*;
 
 @Service
 public class SysWorkspaceServiceImpl extends ServiceImpl<SysWorkspaceMapper, SysWorkspace> implements SysWorkspaceService {
@@ -53,6 +51,12 @@ public class SysWorkspaceServiceImpl extends ServiceImpl<SysWorkspaceMapper, Sys
 
     @Resource
     private RepairProcessRecordMapper repairProcessRecordMapper;
+
+    @Resource
+    private RepairAttachmentMapper repairAttachmentMapper;
+
+    @Resource
+    private RepairFileCleanupService repairFileCleanupService;
 
     /**
      * 不存在则创建，已存在则同步状态。
@@ -423,21 +427,46 @@ public class SysWorkspaceServiceImpl extends ServiceImpl<SysWorkspaceMapper, Sys
      * 清理Repair数据，保留工作空间。
      */
     private void deleteRepairData(Long workspaceId) {
+        Set<String> paths = new LinkedHashSet<>();
+
+        // 删除数据库记录前，先取得文件路径。
+        repairAttachmentMapper.selectList(
+                        new LambdaQueryWrapper<RepairAttachment>()
+                                .eq(RepairAttachment::getWorkspaceId, workspaceId))
+                .forEach(a -> paths.add(a.getImageUrl()));
+
+        repairOrderImageMapper.selectList(
+                        new LambdaQueryWrapper<RepairOrderImage>()
+                                .eq(RepairOrderImage::getWorkspaceId, workspaceId))
+                .forEach(i -> paths.add(i.getImageUrl()));
+
+        // 任务与当前业务事务一起提交，回滚时不删除原图片。
+        repairFileCleanupService.enqueue(paths);
+
         repairOrderImageMapper.delete(
                 new QueryWrapper<RepairOrderImage>()
                         .eq("workspace_id", workspaceId));
+
+        repairAttachmentMapper.delete(
+                new LambdaQueryWrapper<RepairAttachment>()
+                        .eq(RepairAttachment::getWorkspaceId, workspaceId));
+
         repairEvaluationMapper.delete(
                 new QueryWrapper<RepairEvaluation>()
                         .eq("workspace_id", workspaceId));
+
         repairProcessRecordMapper.delete(
                 new QueryWrapper<RepairProcessRecord>()
                         .eq("workspace_id", workspaceId));
+
         repairOrderMapper.delete(
                 new QueryWrapper<RepairOrder>()
                         .eq("workspace_id", workspaceId));
+
         repairDeviceMapper.delete(
                 new QueryWrapper<RepairDevice>()
                         .eq("workspace_id", workspaceId));
+
         repairUserMapper.delete(
                 new QueryWrapper<RepairUser>()
                         .eq("workspace_id", workspaceId));

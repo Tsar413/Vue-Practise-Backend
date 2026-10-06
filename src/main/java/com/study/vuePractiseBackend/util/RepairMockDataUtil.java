@@ -304,6 +304,7 @@ public final class RepairMockDataUtil {
         order.setDeviceName(device.getDeviceName());
         order.setDeviceType(device.getDeviceType());
         order.setLocation(device.getLocation());
+        order.setCampus(device.getCampus());
 
         order.setTitle(title);
         order.setDescription(description);

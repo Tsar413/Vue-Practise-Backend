@@ -5,6 +5,8 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.study.vuePractiseBackend.dto.TicketActivityDTO;
 import com.study.vuePractiseBackend.dto.TicketActivityStatusDTO;
 import com.study.vuePractiseBackend.dto.TicketActivityUpdateDTO;
+import com.study.vuePractiseBackend.entity.SysWorkspace;
+import com.study.vuePractiseBackend.mapper.SysWorkspaceMapper;
 import com.study.vuePractiseBackend.entity.TicketActivity;
 import com.study.vuePractiseBackend.entity.TicketRecord;
 import com.study.vuePractiseBackend.entity.TicketUser;
@@ -16,6 +18,7 @@ import jakarta.annotation.Resource;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.annotation.Isolation;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDateTime;
@@ -30,9 +33,13 @@ public class TicketActivityServiceImpl extends ServiceImpl<TicketActivityMapper,
     @Resource
     private TicketRecordMapper ticketRecordMapper;
 
+    @Resource
+    private SysWorkspaceMapper sysWorkspaceMapper;
+
     @Override
-    @Transactional
+    @Transactional(isolation = Isolation.READ_COMMITTED)
     public TicketActivity saveNewActivity(Long workspaceId, TicketActivityDTO dto) {
+        lockWorkspace(workspaceId);
         if (workspaceId == null) {
             throw new IllegalArgumentException("工作空间不能为空");
         }
@@ -120,8 +127,9 @@ public class TicketActivityServiceImpl extends ServiceImpl<TicketActivityMapper,
     }
 
     @Override
-    @Transactional
+    @Transactional(isolation = Isolation.READ_COMMITTED)
     public TicketActivity updateActivity(Long workspaceId, Long activityId, TicketActivityUpdateDTO dto) {
+        lockWorkspace(workspaceId);
         if (dto == null) {
             throw new IllegalArgumentException("活动信息不能为空");
         }
@@ -163,8 +171,9 @@ public class TicketActivityServiceImpl extends ServiceImpl<TicketActivityMapper,
     }
 
     @Override
-    @Transactional
+    @Transactional(isolation = Isolation.READ_COMMITTED)
     public TicketActivity changeActivityStatus(Long workspaceId, Long activityId, TicketActivityStatusDTO dto) {
+        lockWorkspace(workspaceId);
         if (dto == null) {
             throw new IllegalArgumentException("状态信息不能为空");
         }
@@ -196,8 +205,9 @@ public class TicketActivityServiceImpl extends ServiceImpl<TicketActivityMapper,
     }
 
     @Override
-    @Transactional
+    @Transactional(isolation = Isolation.READ_COMMITTED)
     public Integer deleteActivity(Long workspaceId, Long activityId, Long operatorId) {
+        lockWorkspace(workspaceId);
         checkAdmin(workspaceId, operatorId);
         TicketActivity activity = findActivityForUpdate(workspaceId, activityId);
         if (!Integer.valueOf(0).equals(activity.getStatus())) {
@@ -344,4 +354,20 @@ public class TicketActivityServiceImpl extends ServiceImpl<TicketActivityMapper,
             throw new ResponseStatusException(HttpStatus.CONFLICT, "报名已经结束，不能发布活动");
         }
     }
+    /** Serialize activity writes with workspace reset/deletion and ticket record writes. */
+    private void lockWorkspace(Long workspaceId) {
+        if (workspaceId == null || workspaceId <= 0) {
+            throw new IllegalArgumentException("工作空间ID必须为正数");
+        }
+        SysWorkspace workspace = sysWorkspaceMapper.selectOne(
+                new LambdaQueryWrapper<SysWorkspace>()
+                        .eq(SysWorkspace::getId, workspaceId).last("FOR UPDATE"));
+        if (workspace == null) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "工作空间不存在");
+        }
+        if (!Integer.valueOf(1).equals(workspace.getStatus())) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "工作空间已暂停");
+        }
+    }
+
 }

@@ -7,17 +7,32 @@ import org.springframework.dao.DuplicateKeyException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.web.HttpMediaTypeNotSupportedException;
+import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
+import org.springframework.web.multipart.MultipartException;
 import org.springframework.web.multipart.support.MissingServletRequestPartException;
 import org.springframework.web.server.ResponseStatusException;
 
 @Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+
+    // Request routing errors are client errors, not unhandled server failures.
+    @ExceptionHandler(HttpMediaTypeNotSupportedException.class)
+    public ResponseEntity<Result<Void>> handleUnsupportedMediaType(HttpMediaTypeNotSupportedException e) {
+        return error(HttpStatus.UNSUPPORTED_MEDIA_TYPE, "请求Content-Type不受支持");
+    }
+
+    @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
+    public ResponseEntity<Result<Void>> handleUnsupportedMethod(HttpRequestMethodNotSupportedException e) {
+        return error(HttpStatus.METHOD_NOT_ALLOWED, "请求方法不受支持");
+    }
+
 
     /**
      * 请求体为空、JSON格式错误、JSON字段类型错误。
@@ -155,7 +170,7 @@ public class GlobalExceptionHandler {
 
         return error(
                 HttpStatus.PAYLOAD_TOO_LARGE,
-                "上传文件或请求超过大小限制，单个Excel文件不能超过5MB"
+                "上传文件或请求超过大小限制，单个文件不能超过5MB"
         );
     }
 
@@ -169,5 +184,13 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<Result<Void>> handleIllegalArgument(IllegalArgumentException exception) {
         return error(HttpStatus.BAD_REQUEST, exception.getMessage());
+    }
+
+    @ExceptionHandler(MultipartException.class)
+    public ResponseEntity<Result<Void>> handleMultipart(MultipartException e) {
+        return error(
+                HttpStatus.BAD_REQUEST,
+                "请使用multipart/form-data上传，文件字段名为file"
+        );
     }
 }

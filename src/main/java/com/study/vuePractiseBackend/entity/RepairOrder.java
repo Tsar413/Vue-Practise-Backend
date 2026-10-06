@@ -80,6 +80,10 @@ public class RepairOrder {
     @Column(nullable = false)
     private Integer status;
 
+    /** 报修时的校区，历史数据允许暂时为空 */
+    @Column(length = 50)
+    private String campus;
+
     /** 最近一次提交的维修结果，历史过程另存处理记录表 */
     @Column(name = "repair_result", columnDefinition = "TEXT")
     @TableField("repair_result")

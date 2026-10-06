@@ -48,6 +48,11 @@ public class RepairOrderImage {
     @TableField("uploader_id")
     private Long uploaderId;
 
+    /** 对应repair_attachment.id */
+    @Column(name = "attachment_id")
+    @TableField("attachment_id")
+    private Long attachmentId;
+
     /** 对应repair_process_record.id，可以为空 */
     @Column(name = "process_record_id")
     @TableField("process_record_id")
