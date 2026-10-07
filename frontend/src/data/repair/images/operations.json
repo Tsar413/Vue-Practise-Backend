@@ -1,0 +1,2005 @@
+[
+  {
+    "summary": "上传故障或维修图片",
+    "deprecated": false,
+    "description": "权限：有效长期访问码；所属学生、班级、空间启用；请使用本人工作空间。REPORTER上传类型1；MAINTAINER上传类型2\n\n- multipart/form-data一次上传一个file；REPORTER只上传imageType=1，MAINTAINER只上传imageType=2。\n- 支持JPEG、PNG、WebP，单张≤5MB，像素总数≤1600万；检查真实内容而非扩展名。\n- 返回id为RepairAttachment.id；此ID用于imageIds。上传后status=0，绑定工单后变为1。",
+    "operationId": "RepairController_uploadImage",
+    "tags": [
+      "图片管理"
+    ],
+    "parameters": [
+      {
+        "name": "accessCode",
+        "in": "path",
+        "description": "学生长期API访问码；决定workspaceId，客户端不提交workspaceId",
+        "required": true,
+        "example": "{{apiAccessCode}}",
+        "schema": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        }
+      }
+    ],
+    "requestBody": {
+      "content": {
+        "multipart/form-data": {
+          "schema": {
+            "type": "object",
+            "properties": {
+              "operatorId": {
+                "type": "integer",
+                "format": "int64",
+                "description": "报修模拟操作人主键，取自本项目用户列表",
+                "example": 102
+              },
+              "imageType": {
+                "type": "integer",
+                "format": "int32",
+                "description": "1故障图片，2维修图片",
+                "example": 1,
+                "enum": [
+                  1,
+                  2
+                ]
+              },
+              "file": {
+                "type": "string",
+                "format": "binary",
+                "description": "实际上传文件，选择File类型",
+                "example": ""
+              }
+            },
+            "required": [
+              "operatorId",
+              "imageType",
+              "file"
+            ]
+          },
+          "example": {
+            "operatorId": 102,
+            "imageType": 1,
+            "file": ""
+          }
+        }
+      },
+      "required": true
+    },
+    "responses": {
+      "200": {
+        "description": "操作成功；data类型RepairImageVO",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": [
+                "code",
+                "message",
+                "data"
+              ],
+              "properties": {
+                "code": {
+                  "type": "integer",
+                  "example": 200
+                },
+                "message": {
+                  "type": "string",
+                  "example": "操作成功"
+                },
+                "data": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "integer",
+                      "format": "int64",
+                      "description": "主键/编号，具体含义见接口说明",
+                      "nullable": true
+                    },
+                    "orderImageId": {
+                      "type": "integer",
+                      "format": "int64",
+                      "description": "工单图片关联ID，不能当附件ID",
+                      "nullable": true
+                    },
+                    "orderId": {
+                      "type": "integer",
+                      "format": "int64",
+                      "description": "工单数据库主键",
+                      "nullable": true
+                    },
+                    "processRecordId": {
+                      "type": "integer",
+                      "format": "int64",
+                      "description": "对应处理记录ID",
+                      "nullable": true
+                    },
+                    "uploaderId": {
+                      "type": "integer",
+                      "format": "int64",
+                      "description": "业务字段",
+                      "nullable": true
+                    },
+                    "imageType": {
+                      "type": "integer",
+                      "format": "int32",
+                      "description": "1：故障图片；2：维修图片",
+                      "nullable": true,
+                      "enum": [
+                        1,
+                        2
+                      ]
+                    },
+                    "status": {
+                      "type": "integer",
+                      "format": "int32",
+                      "description": "0：临时未关联；1：已关联",
+                      "nullable": true,
+                      "enum": [
+                        0,
+                        1
+                      ]
+                    },
+                    "sortOrder": {
+                      "type": "integer",
+                      "format": "int32",
+                      "description": "本次处理记录内的图片顺序",
+                      "nullable": true
+                    },
+                    "originalName": {
+                      "type": "string",
+                      "description": "上传时原文件名",
+                      "nullable": true
+                    },
+                    "contentType": {
+                      "type": "string",
+                      "description": "真实图片MIME类型",
+                      "nullable": true
+                    },
+                    "fileSize": {
+                      "type": "integer",
+                      "format": "int64",
+                      "description": "文件大小，字节",
+                      "nullable": true
+                    },
+                    "previewPath": {
+                      "type": "string",
+                      "description": "相对访问码基础路径的预览路径",
+                      "nullable": true
+                    },
+                    "downloadPath": {
+                      "type": "string",
+                      "description": "相对访问码基础路径的下载路径",
+                      "nullable": true
+                    },
+                    "createTime": {
+                      "type": "string",
+                      "description": "创建时间；返回时间格式以实际响应为准",
+                      "nullable": true
+                    }
+                  }
+                }
+              }
+            },
+            "example": {
+              "code": 200,
+              "message": "操作成功",
+              "data": {
+                "id": 501,
+                "orderImageId": null,
+                "orderId": null,
+                "processRecordId": null,
+                "uploaderId": 102,
+                "imageType": 1,
+                "status": 0,
+                "sortOrder": null,
+                "originalName": "空调故障.png",
+                "contentType": "image/png",
+                "fileSize": 204800,
+                "previewPath": "/repair/images/501/preview",
+                "downloadPath": "/repair/images/501/download",
+                "createTime": "2026-11-01T08:50:00"
+              }
+            }
+          }
+        },
+        "headers": {}
+      },
+      "400": {
+        "description": "缺少/格式错误的参数、字段为空或超长、非法枚举、文件内容不合法等。 具体条件见接口业务规则。",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": [
+                "code",
+                "message",
+                "data"
+              ],
+              "properties": {
+                "code": {
+                  "type": "integer"
+                },
+                "message": {
+                  "type": "string"
+                },
+                "data": {
+                  "type": "object",
+                  "description": "错误时为null",
+                  "properties": {},
+                  "nullable": true
+                }
+              }
+            },
+            "example": {
+              "code": 400,
+              "message": "请求参数不合法",
+              "data": null
+            }
+          }
+        },
+        "headers": {}
+      },
+      "401": {
+        "description": "网页登录Token缺失、无效、过期或撤销；实训路径访问码无效。登录时还可能是账号或密码错误。 具体条件见接口业务规则。",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": [
+                "code",
+                "message",
+                "data"
+              ],
+              "properties": {
+                "code": {
+                  "type": "integer"
+                },
+                "message": {
+                  "type": "string"
+                },
+                "data": {
+                  "type": "object",
+                  "description": "错误时为null",
+                  "properties": {},
+                  "nullable": true
+                }
+              }
+            },
+            "example": {
+              "code": 401,
+              "message": "请先登录或访问码无效",
+              "data": null
+            }
+          }
+        },
+        "headers": {}
+      },
+      "403": {
+        "description": "已识别身份但无此操作权限，或用户/班级/空间停用。跨本人系统资源访问也属于无权限。 具体条件见接口业务规则。",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": [
+                "code",
+                "message",
+                "data"
+              ],
+              "properties": {
+                "code": {
+                  "type": "integer"
+                },
+                "message": {
+                  "type": "string"
+                },
+                "data": {
+                  "type": "object",
+                  "description": "错误时为null",
+                  "properties": {},
+                  "nullable": true
+                }
+              }
+            },
+            "example": {
+              "code": 403,
+              "message": "无权执行该操作",
+              "data": null
+            }
+          }
+        },
+        "headers": {}
+      },
+      "404": {
+        "description": "当前空间内目标或操作人不存在；跨空间ID按照不存在处理。 具体条件见接口业务规则。",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": [
+                "code",
+                "message",
+                "data"
+              ],
+              "properties": {
+                "code": {
+                  "type": "integer"
+                },
+                "message": {
+                  "type": "string"
+                },
+                "data": {
+                  "type": "object",
+                  "description": "错误时为null",
+                  "properties": {},
+                  "nullable": true
+                }
+              }
+            },
+            "example": {
+              "code": 404,
+              "message": "当前空间内目标不存在",
+              "data": null
+            }
+          }
+        },
+        "headers": {}
+      },
+      "405": {
+        "description": "请求方法与接口不匹配。 具体条件见接口业务规则。",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": [
+                "code",
+                "message",
+                "data"
+              ],
+              "properties": {
+                "code": {
+                  "type": "integer"
+                },
+                "message": {
+                  "type": "string"
+                },
+                "data": {
+                  "type": "object",
+                  "description": "错误时为null",
+                  "properties": {},
+                  "nullable": true
+                }
+              }
+            },
+            "example": {
+              "code": 405,
+              "message": "请求方法不受支持",
+              "data": null
+            }
+          }
+        },
+        "headers": {}
+      },
+      "413": {
+        "description": "上传请求超出服务端文件/请求大小限制。 具体条件见接口业务规则。",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": [
+                "code",
+                "message",
+                "data"
+              ],
+              "properties": {
+                "code": {
+                  "type": "integer"
+                },
+                "message": {
+                  "type": "string"
+                },
+                "data": {
+                  "type": "object",
+                  "description": "错误时为null",
+                  "properties": {},
+                  "nullable": true
+                }
+              }
+            },
+            "example": {
+              "code": 413,
+              "message": "上传文件超过大小限制",
+              "data": null
+            }
+          }
+        },
+        "headers": {}
+      },
+      "415": {
+        "description": "Content-Type不被当前接口接受。 具体条件见接口业务规则。",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": [
+                "code",
+                "message",
+                "data"
+              ],
+              "properties": {
+                "code": {
+                  "type": "integer"
+                },
+                "message": {
+                  "type": "string"
+                },
+                "data": {
+                  "type": "object",
+                  "description": "错误时为null",
+                  "properties": {},
+                  "nullable": true
+                }
+              }
+            },
+            "example": {
+              "code": 415,
+              "message": "请求Content-Type不受支持",
+              "data": null
+            }
+          }
+        },
+        "headers": {}
+      },
+      "500": {
+        "description": "服务端执行失败；不应作为参数错误的正常处理方式。 具体条件见接口业务规则。",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": [
+                "code",
+                "message",
+                "data"
+              ],
+              "properties": {
+                "code": {
+                  "type": "integer"
+                },
+                "message": {
+                  "type": "string"
+                },
+                "data": {
+                  "type": "object",
+                  "description": "错误时为null",
+                  "properties": {},
+                  "nullable": true
+                }
+              }
+            },
+            "example": {
+              "code": 500,
+              "message": "操作失败，请稍后重试",
+              "data": null
+            }
+          }
+        },
+        "headers": {}
+      }
+    },
+    "security": [],
+    "path": "/api/practice/{accessCode}/repair/images",
+    "method": "POST",
+    "project": "repair",
+    "group": "images",
+    "source": {
+      "controller": "RepairController",
+      "file": "src/main/java/com/study/vuePractiseBackend/controller/RepairController.java",
+      "line": 89,
+      "requestModel": null,
+      "responseModel": "RepairImageVO"
+    }
+  },
+  {
+    "summary": "查询工单图片",
+    "deprecated": false,
+    "description": "权限：有效长期访问码；所属学生、班级、空间启用；请使用本人工作空间。原报修人、ADMIN、当前/历史参与 MAINTAINER\n\n- 按工单查看权限返回故障及维修图片；imageType不传时返回全部。\n- 按处理记录、排序号、图片关联ID升序；id是附件ID，orderImageId是工单图片关联ID。",
+    "operationId": "RepairController_getOrderImages",
+    "tags": [
+      "图片管理"
+    ],
+    "parameters": [
+      {
+        "name": "accessCode",
+        "in": "path",
+        "description": "学生长期API访问码；决定workspaceId，客户端不提交workspaceId",
+        "required": true,
+        "example": "{{apiAccessCode}}",
+        "schema": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        }
+      },
+      {
+        "name": "orderId",
+        "in": "path",
+        "description": "工单数据库主键",
+        "required": true,
+        "example": 301,
+        "schema": {
+          "type": "integer",
+          "format": "int64"
+        }
+      },
+      {
+        "name": "operatorId",
+        "in": "query",
+        "description": "当前空间的报修模拟操作人主键，请从本项目用户列表查询",
+        "required": true,
+        "example": 101,
+        "schema": {
+          "type": "integer",
+          "format": "int64"
+        }
+      },
+      {
+        "name": "imageType",
+        "in": "query",
+        "description": "1故障图片，2维修图片",
+        "required": false,
+        "example": 1,
+        "schema": {
+          "type": "integer",
+          "format": "int32"
+        }
+      }
+    ],
+    "responses": {
+      "200": {
+        "description": "操作成功；data类型List<RepairImageVO>",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": [
+                "code",
+                "message",
+                "data"
+              ],
+              "properties": {
+                "code": {
+                  "type": "integer",
+                  "example": 200
+                },
+                "message": {
+                  "type": "string",
+                  "example": "操作成功"
+                },
+                "data": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "integer",
+                        "format": "int64",
+                        "description": "主键/编号，具体含义见接口说明",
+                        "nullable": true
+                      },
+                      "orderImageId": {
+                        "type": "integer",
+                        "format": "int64",
+                        "description": "工单图片关联ID，不能当附件ID",
+                        "nullable": true
+                      },
+                      "orderId": {
+                        "type": "integer",
+                        "format": "int64",
+                        "description": "工单数据库主键",
+                        "nullable": true
+                      },
+                      "processRecordId": {
+                        "type": "integer",
+                        "format": "int64",
+                        "description": "对应处理记录ID",
+                        "nullable": true
+                      },
+                      "uploaderId": {
+                        "type": "integer",
+                        "format": "int64",
+                        "description": "业务字段",
+                        "nullable": true
+                      },
+                      "imageType": {
+                        "type": "integer",
+                        "format": "int32",
+                        "description": "1：故障图片；2：维修图片",
+                        "nullable": true,
+                        "enum": [
+                          1,
+                          2
+                        ]
+                      },
+                      "status": {
+                        "type": "integer",
+                        "format": "int32",
+                        "description": "0：临时未关联；1：已关联",
+                        "nullable": true,
+                        "enum": [
+                          0,
+                          1
+                        ]
+                      },
+                      "sortOrder": {
+                        "type": "integer",
+                        "format": "int32",
+                        "description": "本次处理记录内的图片顺序",
+                        "nullable": true
+                      },
+                      "originalName": {
+                        "type": "string",
+                        "description": "上传时原文件名",
+                        "nullable": true
+                      },
+                      "contentType": {
+                        "type": "string",
+                        "description": "真实图片MIME类型",
+                        "nullable": true
+                      },
+                      "fileSize": {
+                        "type": "integer",
+                        "format": "int64",
+                        "description": "文件大小，字节",
+                        "nullable": true
+                      },
+                      "previewPath": {
+                        "type": "string",
+                        "description": "相对访问码基础路径的预览路径",
+                        "nullable": true
+                      },
+                      "downloadPath": {
+                        "type": "string",
+                        "description": "相对访问码基础路径的下载路径",
+                        "nullable": true
+                      },
+                      "createTime": {
+                        "type": "string",
+                        "description": "创建时间；返回时间格式以实际响应为准",
+                        "nullable": true
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "example": {
+              "code": 200,
+              "message": "操作成功",
+              "data": [
+                {
+                  "id": 501,
+                  "orderImageId": 701,
+                  "orderId": 301,
+                  "processRecordId": null,
+                  "uploaderId": 102,
+                  "imageType": 1,
+                  "status": 1,
+                  "sortOrder": 1,
+                  "originalName": "空调故障.png",
+                  "contentType": "image/png",
+                  "fileSize": 204800,
+                  "previewPath": "/repair/images/501/preview",
+                  "downloadPath": "/repair/images/501/download",
+                  "createTime": "2026-11-01T08:50:00"
+                }
+              ]
+            }
+          }
+        },
+        "headers": {}
+      },
+      "400": {
+        "description": "缺少/格式错误的参数、字段为空或超长、非法枚举、文件内容不合法等。 具体条件见接口业务规则。",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": [
+                "code",
+                "message",
+                "data"
+              ],
+              "properties": {
+                "code": {
+                  "type": "integer"
+                },
+                "message": {
+                  "type": "string"
+                },
+                "data": {
+                  "type": "object",
+                  "description": "错误时为null",
+                  "properties": {},
+                  "nullable": true
+                }
+              }
+            },
+            "example": {
+              "code": 400,
+              "message": "请求参数不合法",
+              "data": null
+            }
+          }
+        },
+        "headers": {}
+      },
+      "401": {
+        "description": "网页登录Token缺失、无效、过期或撤销；实训路径访问码无效。登录时还可能是账号或密码错误。 具体条件见接口业务规则。",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": [
+                "code",
+                "message",
+                "data"
+              ],
+              "properties": {
+                "code": {
+                  "type": "integer"
+                },
+                "message": {
+                  "type": "string"
+                },
+                "data": {
+                  "type": "object",
+                  "description": "错误时为null",
+                  "properties": {},
+                  "nullable": true
+                }
+              }
+            },
+            "example": {
+              "code": 401,
+              "message": "请先登录或访问码无效",
+              "data": null
+            }
+          }
+        },
+        "headers": {}
+      },
+      "403": {
+        "description": "已识别身份但无此操作权限，或用户/班级/空间停用。跨本人系统资源访问也属于无权限。 具体条件见接口业务规则。",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": [
+                "code",
+                "message",
+                "data"
+              ],
+              "properties": {
+                "code": {
+                  "type": "integer"
+                },
+                "message": {
+                  "type": "string"
+                },
+                "data": {
+                  "type": "object",
+                  "description": "错误时为null",
+                  "properties": {},
+                  "nullable": true
+                }
+              }
+            },
+            "example": {
+              "code": 403,
+              "message": "无权执行该操作",
+              "data": null
+            }
+          }
+        },
+        "headers": {}
+      },
+      "404": {
+        "description": "当前空间内目标或操作人不存在；跨空间ID按照不存在处理。 具体条件见接口业务规则。",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": [
+                "code",
+                "message",
+                "data"
+              ],
+              "properties": {
+                "code": {
+                  "type": "integer"
+                },
+                "message": {
+                  "type": "string"
+                },
+                "data": {
+                  "type": "object",
+                  "description": "错误时为null",
+                  "properties": {},
+                  "nullable": true
+                }
+              }
+            },
+            "example": {
+              "code": 404,
+              "message": "当前空间内目标不存在",
+              "data": null
+            }
+          }
+        },
+        "headers": {}
+      },
+      "405": {
+        "description": "请求方法与接口不匹配。 具体条件见接口业务规则。",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": [
+                "code",
+                "message",
+                "data"
+              ],
+              "properties": {
+                "code": {
+                  "type": "integer"
+                },
+                "message": {
+                  "type": "string"
+                },
+                "data": {
+                  "type": "object",
+                  "description": "错误时为null",
+                  "properties": {},
+                  "nullable": true
+                }
+              }
+            },
+            "example": {
+              "code": 405,
+              "message": "请求方法不受支持",
+              "data": null
+            }
+          }
+        },
+        "headers": {}
+      },
+      "415": {
+        "description": "Content-Type不被当前接口接受。 具体条件见接口业务规则。",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": [
+                "code",
+                "message",
+                "data"
+              ],
+              "properties": {
+                "code": {
+                  "type": "integer"
+                },
+                "message": {
+                  "type": "string"
+                },
+                "data": {
+                  "type": "object",
+                  "description": "错误时为null",
+                  "properties": {},
+                  "nullable": true
+                }
+              }
+            },
+            "example": {
+              "code": 415,
+              "message": "请求Content-Type不受支持",
+              "data": null
+            }
+          }
+        },
+        "headers": {}
+      },
+      "500": {
+        "description": "服务端执行失败；不应作为参数错误的正常处理方式。 具体条件见接口业务规则。",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": [
+                "code",
+                "message",
+                "data"
+              ],
+              "properties": {
+                "code": {
+                  "type": "integer"
+                },
+                "message": {
+                  "type": "string"
+                },
+                "data": {
+                  "type": "object",
+                  "description": "错误时为null",
+                  "properties": {},
+                  "nullable": true
+                }
+              }
+            },
+            "example": {
+              "code": 500,
+              "message": "操作失败，请稍后重试",
+              "data": null
+            }
+          }
+        },
+        "headers": {}
+      }
+    },
+    "security": [],
+    "path": "/api/practice/{accessCode}/repair/orders/{orderId}/images",
+    "method": "GET",
+    "project": "repair",
+    "group": "images",
+    "source": {
+      "controller": "RepairController",
+      "file": "src/main/java/com/study/vuePractiseBackend/controller/RepairController.java",
+      "line": 98,
+      "requestModel": null,
+      "responseModel": "List<RepairImageVO>"
+    }
+  },
+  {
+    "summary": "预览图片",
+    "deprecated": false,
+    "description": "权限：有效长期访问码；所属学生、班级、空间启用；图片必须属于访问码对应工作空间，不按模拟角色限制读取\n\n- 不要求operatorId；当前访问码对应空间内的临时、已绑定图片均可读取，不按模拟角色限制。\n- 成功返回图片二进制，不是Result JSON；失败返回Result。Content-Type为真实图片类型，nosniff，no-store。\n- 前端img的src包含accessCode即可；禁止直接访问磁盘文件或公开静态路径。",
+    "operationId": "RepairController_previewImage",
+    "tags": [
+      "图片管理"
+    ],
+    "parameters": [
+      {
+        "name": "accessCode",
+        "in": "path",
+        "description": "学生长期API访问码；决定workspaceId，客户端不提交workspaceId",
+        "required": true,
+        "example": "{{apiAccessCode}}",
+        "schema": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        }
+      },
+      {
+        "name": "imageId",
+        "in": "path",
+        "description": "RepairAttachment.id附件主键",
+        "required": true,
+        "example": 501,
+        "schema": {
+          "type": "integer",
+          "format": "int64"
+        }
+      }
+    ],
+    "responses": {
+      "200": {
+        "description": "成功，图片二进制；无需operatorId，仅校验访问码和空间归属",
+        "content": {
+          "image/jpeg": {
+            "schema": {
+              "type": "string",
+              "format": "binary"
+            }
+          },
+          "image/png": {
+            "schema": {
+              "type": "string",
+              "format": "binary"
+            }
+          },
+          "image/webp": {
+            "schema": {
+              "type": "string",
+              "format": "binary"
+            }
+          }
+        },
+        "headers": {
+          "Content-Disposition": {
+            "required": false,
+            "description": "预览inline，下载attachment；含原始文件名",
+            "schema": {
+              "type": "string"
+            }
+          },
+          "Cache-Control": {
+            "required": false,
+            "description": "no-store",
+            "schema": {
+              "type": "string"
+            }
+          },
+          "X-Content-Type-Options": {
+            "required": false,
+            "description": "nosniff",
+            "schema": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "400": {
+        "description": "缺少/格式错误的参数、字段为空或超长、非法枚举、文件内容不合法等。 具体条件见接口业务规则。",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": [
+                "code",
+                "message",
+                "data"
+              ],
+              "properties": {
+                "code": {
+                  "type": "integer"
+                },
+                "message": {
+                  "type": "string"
+                },
+                "data": {
+                  "type": "object",
+                  "description": "错误时为null",
+                  "properties": {},
+                  "nullable": true
+                }
+              }
+            },
+            "example": {
+              "code": 400,
+              "message": "请求参数不合法",
+              "data": null
+            }
+          }
+        },
+        "headers": {}
+      },
+      "401": {
+        "description": "网页登录Token缺失、无效、过期或撤销；实训路径访问码无效。登录时还可能是账号或密码错误。 具体条件见接口业务规则。",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": [
+                "code",
+                "message",
+                "data"
+              ],
+              "properties": {
+                "code": {
+                  "type": "integer"
+                },
+                "message": {
+                  "type": "string"
+                },
+                "data": {
+                  "type": "object",
+                  "description": "错误时为null",
+                  "properties": {},
+                  "nullable": true
+                }
+              }
+            },
+            "example": {
+              "code": 401,
+              "message": "请先登录或访问码无效",
+              "data": null
+            }
+          }
+        },
+        "headers": {}
+      },
+      "403": {
+        "description": "已识别身份但无此操作权限，或用户/班级/空间停用。跨本人系统资源访问也属于无权限。 具体条件见接口业务规则。",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": [
+                "code",
+                "message",
+                "data"
+              ],
+              "properties": {
+                "code": {
+                  "type": "integer"
+                },
+                "message": {
+                  "type": "string"
+                },
+                "data": {
+                  "type": "object",
+                  "description": "错误时为null",
+                  "properties": {},
+                  "nullable": true
+                }
+              }
+            },
+            "example": {
+              "code": 403,
+              "message": "无权执行该操作",
+              "data": null
+            }
+          }
+        },
+        "headers": {}
+      },
+      "404": {
+        "description": "当前空间内目标或操作人不存在；跨空间ID按照不存在处理。 具体条件见接口业务规则。",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": [
+                "code",
+                "message",
+                "data"
+              ],
+              "properties": {
+                "code": {
+                  "type": "integer"
+                },
+                "message": {
+                  "type": "string"
+                },
+                "data": {
+                  "type": "object",
+                  "description": "错误时为null",
+                  "properties": {},
+                  "nullable": true
+                }
+              }
+            },
+            "example": {
+              "code": 404,
+              "message": "当前空间内目标不存在",
+              "data": null
+            }
+          }
+        },
+        "headers": {}
+      },
+      "405": {
+        "description": "请求方法与接口不匹配。 具体条件见接口业务规则。",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": [
+                "code",
+                "message",
+                "data"
+              ],
+              "properties": {
+                "code": {
+                  "type": "integer"
+                },
+                "message": {
+                  "type": "string"
+                },
+                "data": {
+                  "type": "object",
+                  "description": "错误时为null",
+                  "properties": {},
+                  "nullable": true
+                }
+              }
+            },
+            "example": {
+              "code": 405,
+              "message": "请求方法不受支持",
+              "data": null
+            }
+          }
+        },
+        "headers": {}
+      },
+      "415": {
+        "description": "Content-Type不被当前接口接受。 具体条件见接口业务规则。",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": [
+                "code",
+                "message",
+                "data"
+              ],
+              "properties": {
+                "code": {
+                  "type": "integer"
+                },
+                "message": {
+                  "type": "string"
+                },
+                "data": {
+                  "type": "object",
+                  "description": "错误时为null",
+                  "properties": {},
+                  "nullable": true
+                }
+              }
+            },
+            "example": {
+              "code": 415,
+              "message": "请求Content-Type不受支持",
+              "data": null
+            }
+          }
+        },
+        "headers": {}
+      },
+      "500": {
+        "description": "服务端执行失败；不应作为参数错误的正常处理方式。 具体条件见接口业务规则。",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": [
+                "code",
+                "message",
+                "data"
+              ],
+              "properties": {
+                "code": {
+                  "type": "integer"
+                },
+                "message": {
+                  "type": "string"
+                },
+                "data": {
+                  "type": "object",
+                  "description": "错误时为null",
+                  "properties": {},
+                  "nullable": true
+                }
+              }
+            },
+            "example": {
+              "code": 500,
+              "message": "操作失败，请稍后重试",
+              "data": null
+            }
+          }
+        },
+        "headers": {}
+      }
+    },
+    "security": [],
+    "path": "/api/practice/{accessCode}/repair/images/{imageId}/preview",
+    "method": "GET",
+    "project": "repair",
+    "group": "images",
+    "source": {
+      "controller": "RepairController",
+      "file": "src/main/java/com/study/vuePractiseBackend/controller/RepairController.java",
+      "line": 107,
+      "requestModel": null,
+      "responseModel": "binary"
+    }
+  },
+  {
+    "summary": "下载图片",
+    "deprecated": false,
+    "description": "权限：有效长期访问码；所属学生、班级、空间启用；图片必须属于访问码对应工作空间，不按模拟角色限制读取\n\n- 权限与预览一致，不要求operatorId，只检查访问码对应工作空间。\n- 成功返回文件流，Content-Disposition为attachment，支持中文原文件名；失败返回Result JSON。",
+    "operationId": "RepairController_downloadImage",
+    "tags": [
+      "图片管理"
+    ],
+    "parameters": [
+      {
+        "name": "accessCode",
+        "in": "path",
+        "description": "学生长期API访问码；决定workspaceId，客户端不提交workspaceId",
+        "required": true,
+        "example": "{{apiAccessCode}}",
+        "schema": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        }
+      },
+      {
+        "name": "imageId",
+        "in": "path",
+        "description": "RepairAttachment.id附件主键",
+        "required": true,
+        "example": 501,
+        "schema": {
+          "type": "integer",
+          "format": "int64"
+        }
+      }
+    ],
+    "responses": {
+      "200": {
+        "description": "成功，图片二进制；无需operatorId，仅校验访问码和空间归属",
+        "content": {
+          "image/jpeg": {
+            "schema": {
+              "type": "string",
+              "format": "binary"
+            }
+          },
+          "image/png": {
+            "schema": {
+              "type": "string",
+              "format": "binary"
+            }
+          },
+          "image/webp": {
+            "schema": {
+              "type": "string",
+              "format": "binary"
+            }
+          }
+        },
+        "headers": {
+          "Content-Disposition": {
+            "required": false,
+            "description": "预览inline，下载attachment；含原始文件名",
+            "schema": {
+              "type": "string"
+            }
+          },
+          "Cache-Control": {
+            "required": false,
+            "description": "no-store",
+            "schema": {
+              "type": "string"
+            }
+          },
+          "X-Content-Type-Options": {
+            "required": false,
+            "description": "nosniff",
+            "schema": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "400": {
+        "description": "缺少/格式错误的参数、字段为空或超长、非法枚举、文件内容不合法等。 具体条件见接口业务规则。",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": [
+                "code",
+                "message",
+                "data"
+              ],
+              "properties": {
+                "code": {
+                  "type": "integer"
+                },
+                "message": {
+                  "type": "string"
+                },
+                "data": {
+                  "type": "object",
+                  "description": "错误时为null",
+                  "properties": {},
+                  "nullable": true
+                }
+              }
+            },
+            "example": {
+              "code": 400,
+              "message": "请求参数不合法",
+              "data": null
+            }
+          }
+        },
+        "headers": {}
+      },
+      "401": {
+        "description": "网页登录Token缺失、无效、过期或撤销；实训路径访问码无效。登录时还可能是账号或密码错误。 具体条件见接口业务规则。",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": [
+                "code",
+                "message",
+                "data"
+              ],
+              "properties": {
+                "code": {
+                  "type": "integer"
+                },
+                "message": {
+                  "type": "string"
+                },
+                "data": {
+                  "type": "object",
+                  "description": "错误时为null",
+                  "properties": {},
+                  "nullable": true
+                }
+              }
+            },
+            "example": {
+              "code": 401,
+              "message": "请先登录或访问码无效",
+              "data": null
+            }
+          }
+        },
+        "headers": {}
+      },
+      "403": {
+        "description": "已识别身份但无此操作权限，或用户/班级/空间停用。跨本人系统资源访问也属于无权限。 具体条件见接口业务规则。",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": [
+                "code",
+                "message",
+                "data"
+              ],
+              "properties": {
+                "code": {
+                  "type": "integer"
+                },
+                "message": {
+                  "type": "string"
+                },
+                "data": {
+                  "type": "object",
+                  "description": "错误时为null",
+                  "properties": {},
+                  "nullable": true
+                }
+              }
+            },
+            "example": {
+              "code": 403,
+              "message": "无权执行该操作",
+              "data": null
+            }
+          }
+        },
+        "headers": {}
+      },
+      "404": {
+        "description": "当前空间内目标或操作人不存在；跨空间ID按照不存在处理。 具体条件见接口业务规则。",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": [
+                "code",
+                "message",
+                "data"
+              ],
+              "properties": {
+                "code": {
+                  "type": "integer"
+                },
+                "message": {
+                  "type": "string"
+                },
+                "data": {
+                  "type": "object",
+                  "description": "错误时为null",
+                  "properties": {},
+                  "nullable": true
+                }
+              }
+            },
+            "example": {
+              "code": 404,
+              "message": "当前空间内目标不存在",
+              "data": null
+            }
+          }
+        },
+        "headers": {}
+      },
+      "405": {
+        "description": "请求方法与接口不匹配。 具体条件见接口业务规则。",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": [
+                "code",
+                "message",
+                "data"
+              ],
+              "properties": {
+                "code": {
+                  "type": "integer"
+                },
+                "message": {
+                  "type": "string"
+                },
+                "data": {
+                  "type": "object",
+                  "description": "错误时为null",
+                  "properties": {},
+                  "nullable": true
+                }
+              }
+            },
+            "example": {
+              "code": 405,
+              "message": "请求方法不受支持",
+              "data": null
+            }
+          }
+        },
+        "headers": {}
+      },
+      "415": {
+        "description": "Content-Type不被当前接口接受。 具体条件见接口业务规则。",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": [
+                "code",
+                "message",
+                "data"
+              ],
+              "properties": {
+                "code": {
+                  "type": "integer"
+                },
+                "message": {
+                  "type": "string"
+                },
+                "data": {
+                  "type": "object",
+                  "description": "错误时为null",
+                  "properties": {},
+                  "nullable": true
+                }
+              }
+            },
+            "example": {
+              "code": 415,
+              "message": "请求Content-Type不受支持",
+              "data": null
+            }
+          }
+        },
+        "headers": {}
+      },
+      "500": {
+        "description": "服务端执行失败；不应作为参数错误的正常处理方式。 具体条件见接口业务规则。",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": [
+                "code",
+                "message",
+                "data"
+              ],
+              "properties": {
+                "code": {
+                  "type": "integer"
+                },
+                "message": {
+                  "type": "string"
+                },
+                "data": {
+                  "type": "object",
+                  "description": "错误时为null",
+                  "properties": {},
+                  "nullable": true
+                }
+              }
+            },
+            "example": {
+              "code": 500,
+              "message": "操作失败，请稍后重试",
+              "data": null
+            }
+          }
+        },
+        "headers": {}
+      }
+    },
+    "security": [],
+    "path": "/api/practice/{accessCode}/repair/images/{imageId}/download",
+    "method": "GET",
+    "project": "repair",
+    "group": "images",
+    "source": {
+      "controller": "RepairController",
+      "file": "src/main/java/com/study/vuePractiseBackend/controller/RepairController.java",
+      "line": 114,
+      "requestModel": null,
+      "responseModel": "binary"
+    }
+  },
+  {
+    "summary": "删除临时图片",
+    "deprecated": false,
+    "description": "权限：有效长期访问码；所属学生、班级、空间启用；请使用本人工作空间。临时图仅上传者；已绑定禁止单删\n\n- 仅上传人可删除status=0临时图片；已绑定工单的图片不能单独删除。\n- 删除成功后，附件不再可查询或读取。",
+    "operationId": "RepairController_deleteTemporaryImage",
+    "tags": [
+      "图片管理"
+    ],
+    "parameters": [
+      {
+        "name": "accessCode",
+        "in": "path",
+        "description": "学生长期API访问码；决定workspaceId，客户端不提交workspaceId",
+        "required": true,
+        "example": "{{apiAccessCode}}",
+        "schema": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        }
+      },
+      {
+        "name": "imageId",
+        "in": "path",
+        "description": "RepairAttachment.id附件主键",
+        "required": true,
+        "example": 501,
+        "schema": {
+          "type": "integer",
+          "format": "int64"
+        }
+      },
+      {
+        "name": "operatorId",
+        "in": "query",
+        "description": "当前空间的报修模拟操作人主键，请从本项目用户列表查询",
+        "required": true,
+        "example": 101,
+        "schema": {
+          "type": "integer",
+          "format": "int64"
+        }
+      }
+    ],
+    "responses": {
+      "200": {
+        "description": "操作成功；data类型Integer",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": [
+                "code",
+                "message",
+                "data"
+              ],
+              "properties": {
+                "code": {
+                  "type": "integer",
+                  "example": 200
+                },
+                "message": {
+                  "type": "string",
+                  "example": "操作成功"
+                },
+                "data": {
+                  "type": "integer"
+                }
+              }
+            },
+            "example": {
+              "code": 200,
+              "message": "操作成功",
+              "data": 1
+            }
+          }
+        },
+        "headers": {}
+      },
+      "400": {
+        "description": "缺少/格式错误的参数、字段为空或超长、非法枚举、文件内容不合法等。 具体条件见接口业务规则。",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": [
+                "code",
+                "message",
+                "data"
+              ],
+              "properties": {
+                "code": {
+                  "type": "integer"
+                },
+                "message": {
+                  "type": "string"
+                },
+                "data": {
+                  "type": "object",
+                  "description": "错误时为null",
+                  "properties": {},
+                  "nullable": true
+                }
+              }
+            },
+            "example": {
+              "code": 400,
+              "message": "请求参数不合法",
+              "data": null
+            }
+          }
+        },
+        "headers": {}
+      },
+      "401": {
+        "description": "网页登录Token缺失、无效、过期或撤销；实训路径访问码无效。登录时还可能是账号或密码错误。 具体条件见接口业务规则。",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": [
+                "code",
+                "message",
+                "data"
+              ],
+              "properties": {
+                "code": {
+                  "type": "integer"
+                },
+                "message": {
+                  "type": "string"
+                },
+                "data": {
+                  "type": "object",
+                  "description": "错误时为null",
+                  "properties": {},
+                  "nullable": true
+                }
+              }
+            },
+            "example": {
+              "code": 401,
+              "message": "请先登录或访问码无效",
+              "data": null
+            }
+          }
+        },
+        "headers": {}
+      },
+      "403": {
+        "description": "已识别身份但无此操作权限，或用户/班级/空间停用。跨本人系统资源访问也属于无权限。 具体条件见接口业务规则。",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": [
+                "code",
+                "message",
+                "data"
+              ],
+              "properties": {
+                "code": {
+                  "type": "integer"
+                },
+                "message": {
+                  "type": "string"
+                },
+                "data": {
+                  "type": "object",
+                  "description": "错误时为null",
+                  "properties": {},
+                  "nullable": true
+                }
+              }
+            },
+            "example": {
+              "code": 403,
+              "message": "无权执行该操作",
+              "data": null
+            }
+          }
+        },
+        "headers": {}
+      },
+      "404": {
+        "description": "当前空间内目标或操作人不存在；跨空间ID按照不存在处理。 具体条件见接口业务规则。",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": [
+                "code",
+                "message",
+                "data"
+              ],
+              "properties": {
+                "code": {
+                  "type": "integer"
+                },
+                "message": {
+                  "type": "string"
+                },
+                "data": {
+                  "type": "object",
+                  "description": "错误时为null",
+                  "properties": {},
+                  "nullable": true
+                }
+              }
+            },
+            "example": {
+              "code": 404,
+              "message": "当前空间内目标不存在",
+              "data": null
+            }
+          }
+        },
+        "headers": {}
+      },
+      "405": {
+        "description": "请求方法与接口不匹配。 具体条件见接口业务规则。",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": [
+                "code",
+                "message",
+                "data"
+              ],
+              "properties": {
+                "code": {
+                  "type": "integer"
+                },
+                "message": {
+                  "type": "string"
+                },
+                "data": {
+                  "type": "object",
+                  "description": "错误时为null",
+                  "properties": {},
+                  "nullable": true
+                }
+              }
+            },
+            "example": {
+              "code": 405,
+              "message": "请求方法不受支持",
+              "data": null
+            }
+          }
+        },
+        "headers": {}
+      },
+      "409": {
+        "description": "当前状态不允许操作、重复业务、名额耗尽或存在业务引用等。 具体条件见接口业务规则。",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": [
+                "code",
+                "message",
+                "data"
+              ],
+              "properties": {
+                "code": {
+                  "type": "integer"
+                },
+                "message": {
+                  "type": "string"
+                },
+                "data": {
+                  "type": "object",
+                  "description": "错误时为null",
+                  "properties": {},
+                  "nullable": true
+                }
+              }
+            },
+            "example": {
+              "code": 409,
+              "message": "当前状态不允许该操作",
+              "data": null
+            }
+          }
+        },
+        "headers": {}
+      },
+      "415": {
+        "description": "Content-Type不被当前接口接受。 具体条件见接口业务规则。",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": [
+                "code",
+                "message",
+                "data"
+              ],
+              "properties": {
+                "code": {
+                  "type": "integer"
+                },
+                "message": {
+                  "type": "string"
+                },
+                "data": {
+                  "type": "object",
+                  "description": "错误时为null",
+                  "properties": {},
+                  "nullable": true
+                }
+              }
+            },
+            "example": {
+              "code": 415,
+              "message": "请求Content-Type不受支持",
+              "data": null
+            }
+          }
+        },
+        "headers": {}
+      },
+      "500": {
+        "description": "服务端执行失败；不应作为参数错误的正常处理方式。 具体条件见接口业务规则。",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": [
+                "code",
+                "message",
+                "data"
+              ],
+              "properties": {
+                "code": {
+                  "type": "integer"
+                },
+                "message": {
+                  "type": "string"
+                },
+                "data": {
+                  "type": "object",
+                  "description": "错误时为null",
+                  "properties": {},
+                  "nullable": true
+                }
+              }
+            },
+            "example": {
+              "code": 500,
+              "message": "操作失败，请稍后重试",
+              "data": null
+            }
+          }
+        },
+        "headers": {}
+      }
+    },
+    "security": [],
+    "path": "/api/practice/{accessCode}/repair/images/{imageId}",
+    "method": "DELETE",
+    "project": "repair",
+    "group": "images",
+    "source": {
+      "controller": "RepairController",
+      "file": "src/main/java/com/study/vuePractiseBackend/controller/RepairController.java",
+      "line": 121,
+      "requestModel": null,
+      "responseModel": "Integer"
+    }
+  }
+]

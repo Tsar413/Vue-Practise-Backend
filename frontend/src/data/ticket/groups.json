@@ -1,0 +1,22 @@
+[
+  {
+    "id": "users",
+    "name": "用户管理",
+    "description": "模拟用户查询与身份切换"
+  },
+  {
+    "id": "activities",
+    "name": "活动管理",
+    "description": "活动查询、创建、修改、发布与关闭"
+  },
+  {
+    "id": "registration",
+    "name": "报名管理",
+    "description": "报名抢票与活动报名名单"
+  },
+  {
+    "id": "tickets",
+    "name": "票券管理",
+    "description": "票券查询、取消与核销"
+  }
+]

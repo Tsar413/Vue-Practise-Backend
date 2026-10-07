@@ -1,0 +1,4 @@
+<script setup>
+defineProps({schema:Object})
+</script>
+<template><div v-if="schema?.properties" class="table-wrap schema-table"><table><thead><tr><th>字段</th><th>类型</th><th>必填</th><th>说明与限制</th></tr></thead><tbody><tr v-for="(s,k) in schema.properties" :key="k"><td><code>{{k}}</code></td><td>{{({string:'字符串',integer:'整数',number:'数值',object:'对象',array:'数组',boolean:'布尔值'})[s.type]||s.type}}</td><td>{{schema.required?.includes(k)?'必填':'选填'}}</td><td>{{s.description}}<span v-if="s.enum">；允许值：{{s.enum.join('、')}}</span><span v-if="s.maxLength">；最多 {{s.maxLength}} 字符</span><span v-if="s.minimum!=null">；最小值 {{s.minimum}}</span><span v-if="s.maximum!=null">；最大值 {{s.maximum}}</span><span v-if="s.minItems!=null">；至少 {{s.minItems}} 项</span><span v-if="s.maxItems!=null">；最多 {{s.maxItems}} 项</span><span v-if="s.format">；格式：{{s.format}}</span><span v-if="s.pattern">；格式规则：{{s.pattern}}</span><SchemaTable v-if="s.properties" :schema="s"/></td></tr></tbody></table></div></template>

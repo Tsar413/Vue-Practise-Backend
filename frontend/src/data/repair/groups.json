@@ -1,0 +1,32 @@
+[
+  {
+    "id": "users",
+    "name": "用户管理",
+    "description": "模拟用户查询、维护与身份切换"
+  },
+  {
+    "id": "devices",
+    "name": "设备管理",
+    "description": "设备查询、维护与启停"
+  },
+  {
+    "id": "orders",
+    "name": "工单管理",
+    "description": "报修、派单、接单、维修提交与确认"
+  },
+  {
+    "id": "process",
+    "name": "处理记录",
+    "description": "维修过程记录与处理时间线"
+  },
+  {
+    "id": "images",
+    "name": "图片管理",
+    "description": "图片上传、查询、预览、下载与删除"
+  },
+  {
+    "id": "evaluation",
+    "name": "工单评价",
+    "description": "创建评价与查看评价结果"
+  }
+]

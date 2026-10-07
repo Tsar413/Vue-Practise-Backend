@@ -1,0 +1,2703 @@
+[
+  {
+    "summary": "查询抢票活动列表",
+    "deprecated": false,
+    "description": "权限：有效长期访问码；所属学生、班级、空间启用；请使用本人工作空间。列表/详情不另要求模拟角色；switch 要求目标用户启用且 USER/ADMIN\n\n- campus精确筛选新吴校区/藕塘校区；status=0草稿/1发布/2关闭；keyword模糊匹配活动名称。\n- 按活动ID降序，不分页。",
+    "operationId": "TicketController_getAllActivities",
+    "tags": [
+      "活动管理"
+    ],
+    "parameters": [
+      {
+        "name": "accessCode",
+        "in": "path",
+        "description": "学生长期API访问码；决定workspaceId，客户端不提交workspaceId",
+        "required": true,
+        "example": "{{apiAccessCode}}",
+        "schema": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        }
+      },
+      {
+        "name": "campus",
+        "in": "query",
+        "description": "新吴校区或藕塘校区",
+        "required": false,
+        "example": "新吴校区",
+        "schema": {
+          "type": "string"
+        }
+      },
+      {
+        "name": "keyword",
+        "in": "query",
+        "description": "模糊搜索关键词",
+        "required": false,
+        "example": "观影",
+        "schema": {
+          "type": "string"
+        }
+      },
+      {
+        "name": "status",
+        "in": "query",
+        "description": "状态枚举，见状态字典",
+        "required": false,
+        "example": 1,
+        "schema": {
+          "type": "integer",
+          "format": "int32",
+          "enum": [
+            0,
+            1,
+            2
+          ]
+        }
+      }
+    ],
+    "responses": {
+      "200": {
+        "description": "操作成功；data类型List<TicketActivity>",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": [
+                "code",
+                "message",
+                "data"
+              ],
+              "properties": {
+                "code": {
+                  "type": "integer",
+                  "example": 200
+                },
+                "message": {
+                  "type": "string",
+                  "example": "操作成功"
+                },
+                "data": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "integer",
+                        "format": "int64",
+                        "description": "主键/编号，具体含义见接口说明",
+                        "nullable": true
+                      },
+                      "activityName": {
+                        "type": "string",
+                        "description": "活动名称",
+                        "maxLength": 100,
+                        "nullable": true
+                      },
+                      "workspaceId": {
+                        "type": "integer",
+                        "format": "int64",
+                        "description": "服务端解析的空间ID，只返回，客户端不提交",
+                        "nullable": true
+                      },
+                      "description": {
+                        "type": "string",
+                        "description": "活动介绍，选填",
+                        "nullable": true
+                      },
+                      "coverUrl": {
+                        "type": "string",
+                        "description": "活动封面URL",
+                        "maxLength": 500,
+                        "nullable": true
+                      },
+                      "campus": {
+                        "type": "string",
+                        "description": "新吴校区或藕塘校区",
+                        "maxLength": 50,
+                        "nullable": true,
+                        "enum": [
+                          "新吴校区",
+                          "藕塘校区"
+                        ]
+                      },
+                      "location": {
+                        "type": "string",
+                        "description": "活动地点",
+                        "maxLength": 200,
+                        "nullable": true
+                      },
+                      "status": {
+                        "type": "integer",
+                        "format": "int32",
+                        "description": "0：草稿；1：已发布；2：已关闭",
+                        "nullable": true,
+                        "enum": [
+                          0,
+                          1,
+                          2
+                        ]
+                      },
+                      "quota": {
+                        "type": "integer",
+                        "format": "int32",
+                        "description": "总名额，正整数",
+                        "nullable": true,
+                        "minimum": 1
+                      },
+                      "bookedCount": {
+                        "type": "integer",
+                        "format": "int32",
+                        "description": "报名人数，包含有效和已核销票券",
+                        "nullable": true
+                      },
+                      "bookingStartTime": {
+                        "type": "string",
+                        "description": "报名开始，包含该时间；返回时间格式以实际响应为准",
+                        "nullable": true
+                      },
+                      "bookingEndTime": {
+                        "type": "string",
+                        "description": "报名结束，不包含该时间；返回时间格式以实际响应为准",
+                        "nullable": true
+                      },
+                      "activityStartTime": {
+                        "type": "string",
+                        "description": "活动开始；返回时间格式以实际响应为准",
+                        "nullable": true
+                      },
+                      "activityEndTime": {
+                        "type": "string",
+                        "description": "活动结束；返回时间格式以实际响应为准",
+                        "nullable": true
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "example": {
+              "code": 200,
+              "message": "操作成功",
+              "data": [
+                {
+                  "id": 401,
+                  "activityName": "校园秋季观影活动",
+                  "workspaceId": 40,
+                  "description": "面向在校师生开放报名，凭有效票券入场参加观影活动。",
+                  "coverUrl": null,
+                  "campus": "新吴校区",
+                  "location": "新吴校区大学生活动中心",
+                  "status": 1,
+                  "quota": 30,
+                  "bookedCount": 0,
+                  "bookingStartTime": "2026-11-01 08:00:00",
+                  "bookingEndTime": "2026-11-02 12:00:00",
+                  "activityStartTime": "2026-11-02 14:00:00",
+                  "activityEndTime": "2026-11-02 16:00:00"
+                }
+              ]
+            }
+          }
+        },
+        "headers": {}
+      },
+      "400": {
+        "description": "缺少/格式错误的参数、字段为空或超长、非法枚举、文件内容不合法等。 具体条件见接口业务规则。",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": [
+                "code",
+                "message",
+                "data"
+              ],
+              "properties": {
+                "code": {
+                  "type": "integer"
+                },
+                "message": {
+                  "type": "string"
+                },
+                "data": {
+                  "type": "object",
+                  "description": "错误时为null",
+                  "properties": {},
+                  "nullable": true
+                }
+              }
+            },
+            "example": {
+              "code": 400,
+              "message": "请求参数不合法",
+              "data": null
+            }
+          }
+        },
+        "headers": {}
+      },
+      "401": {
+        "description": "网页登录Token缺失、无效、过期或撤销；实训路径访问码无效。登录时还可能是账号或密码错误。 具体条件见接口业务规则。",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": [
+                "code",
+                "message",
+                "data"
+              ],
+              "properties": {
+                "code": {
+                  "type": "integer"
+                },
+                "message": {
+                  "type": "string"
+                },
+                "data": {
+                  "type": "object",
+                  "description": "错误时为null",
+                  "properties": {},
+                  "nullable": true
+                }
+              }
+            },
+            "example": {
+              "code": 401,
+              "message": "请先登录或访问码无效",
+              "data": null
+            }
+          }
+        },
+        "headers": {}
+      },
+      "405": {
+        "description": "请求方法与接口不匹配。 具体条件见接口业务规则。",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": [
+                "code",
+                "message",
+                "data"
+              ],
+              "properties": {
+                "code": {
+                  "type": "integer"
+                },
+                "message": {
+                  "type": "string"
+                },
+                "data": {
+                  "type": "object",
+                  "description": "错误时为null",
+                  "properties": {},
+                  "nullable": true
+                }
+              }
+            },
+            "example": {
+              "code": 405,
+              "message": "请求方法不受支持",
+              "data": null
+            }
+          }
+        },
+        "headers": {}
+      },
+      "415": {
+        "description": "Content-Type不被当前接口接受。 具体条件见接口业务规则。",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": [
+                "code",
+                "message",
+                "data"
+              ],
+              "properties": {
+                "code": {
+                  "type": "integer"
+                },
+                "message": {
+                  "type": "string"
+                },
+                "data": {
+                  "type": "object",
+                  "description": "错误时为null",
+                  "properties": {},
+                  "nullable": true
+                }
+              }
+            },
+            "example": {
+              "code": 415,
+              "message": "请求Content-Type不受支持",
+              "data": null
+            }
+          }
+        },
+        "headers": {}
+      },
+      "500": {
+        "description": "服务端执行失败；不应作为参数错误的正常处理方式。 具体条件见接口业务规则。",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": [
+                "code",
+                "message",
+                "data"
+              ],
+              "properties": {
+                "code": {
+                  "type": "integer"
+                },
+                "message": {
+                  "type": "string"
+                },
+                "data": {
+                  "type": "object",
+                  "description": "错误时为null",
+                  "properties": {},
+                  "nullable": true
+                }
+              }
+            },
+            "example": {
+              "code": 500,
+              "message": "操作失败，请稍后重试",
+              "data": null
+            }
+          }
+        },
+        "headers": {}
+      }
+    },
+    "security": [],
+    "path": "/api/practice/{accessCode}/ticket/activities",
+    "method": "GET",
+    "project": "ticket",
+    "group": "activities",
+    "source": {
+      "controller": "TicketController",
+      "file": "src/main/java/com/study/vuePractiseBackend/controller/TicketController.java",
+      "line": 83,
+      "requestModel": null,
+      "responseModel": "List<TicketActivity>"
+    }
+  },
+  {
+    "summary": "查询抢票活动详情",
+    "deprecated": false,
+    "description": "权限：有效长期访问码；所属学生、班级、空间启用；请使用本人工作空间。列表/详情不另要求模拟角色；switch 要求目标用户启用且 USER/ADMIN\n\n- activityId为当前空间活动数值主键，不存在或跨空间404。",
+    "operationId": "TicketController_getOneActivity",
+    "tags": [
+      "活动管理"
+    ],
+    "parameters": [
+      {
+        "name": "accessCode",
+        "in": "path",
+        "description": "学生长期API访问码；决定workspaceId，客户端不提交workspaceId",
+        "required": true,
+        "example": "{{apiAccessCode}}",
+        "schema": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        }
+      },
+      {
+        "name": "activityId",
+        "in": "path",
+        "description": "活动数据库主键",
+        "required": true,
+        "example": 401,
+        "schema": {
+          "type": "integer",
+          "format": "int64"
+        }
+      }
+    ],
+    "responses": {
+      "200": {
+        "description": "操作成功；data类型TicketActivity",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": [
+                "code",
+                "message",
+                "data"
+              ],
+              "properties": {
+                "code": {
+                  "type": "integer",
+                  "example": 200
+                },
+                "message": {
+                  "type": "string",
+                  "example": "操作成功"
+                },
+                "data": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "integer",
+                      "format": "int64",
+                      "description": "主键/编号，具体含义见接口说明",
+                      "nullable": true
+                    },
+                    "activityName": {
+                      "type": "string",
+                      "description": "活动名称",
+                      "maxLength": 100,
+                      "nullable": true
+                    },
+                    "workspaceId": {
+                      "type": "integer",
+                      "format": "int64",
+                      "description": "服务端解析的空间ID，只返回，客户端不提交",
+                      "nullable": true
+                    },
+                    "description": {
+                      "type": "string",
+                      "description": "活动介绍，选填",
+                      "nullable": true
+                    },
+                    "coverUrl": {
+                      "type": "string",
+                      "description": "活动封面URL",
+                      "maxLength": 500,
+                      "nullable": true
+                    },
+                    "campus": {
+                      "type": "string",
+                      "description": "新吴校区或藕塘校区",
+                      "maxLength": 50,
+                      "nullable": true,
+                      "enum": [
+                        "新吴校区",
+                        "藕塘校区"
+                      ]
+                    },
+                    "location": {
+                      "type": "string",
+                      "description": "活动地点",
+                      "maxLength": 200,
+                      "nullable": true
+                    },
+                    "status": {
+                      "type": "integer",
+                      "format": "int32",
+                      "description": "0：草稿；1：已发布；2：已关闭",
+                      "nullable": true,
+                      "enum": [
+                        0,
+                        1,
+                        2
+                      ]
+                    },
+                    "quota": {
+                      "type": "integer",
+                      "format": "int32",
+                      "description": "总名额，正整数",
+                      "nullable": true,
+                      "minimum": 1
+                    },
+                    "bookedCount": {
+                      "type": "integer",
+                      "format": "int32",
+                      "description": "报名人数，包含有效和已核销票券",
+                      "nullable": true
+                    },
+                    "bookingStartTime": {
+                      "type": "string",
+                      "description": "报名开始，包含该时间；返回时间格式以实际响应为准",
+                      "nullable": true
+                    },
+                    "bookingEndTime": {
+                      "type": "string",
+                      "description": "报名结束，不包含该时间；返回时间格式以实际响应为准",
+                      "nullable": true
+                    },
+                    "activityStartTime": {
+                      "type": "string",
+                      "description": "活动开始；返回时间格式以实际响应为准",
+                      "nullable": true
+                    },
+                    "activityEndTime": {
+                      "type": "string",
+                      "description": "活动结束；返回时间格式以实际响应为准",
+                      "nullable": true
+                    }
+                  }
+                }
+              }
+            },
+            "example": {
+              "code": 200,
+              "message": "操作成功",
+              "data": {
+                "id": 401,
+                "activityName": "校园秋季观影活动",
+                "workspaceId": 40,
+                "description": "面向在校师生开放报名，凭有效票券入场参加观影活动。",
+                "coverUrl": null,
+                "campus": "新吴校区",
+                "location": "新吴校区大学生活动中心",
+                "status": 1,
+                "quota": 30,
+                "bookedCount": 0,
+                "bookingStartTime": "2026-11-01 08:00:00",
+                "bookingEndTime": "2026-11-02 12:00:00",
+                "activityStartTime": "2026-11-02 14:00:00",
+                "activityEndTime": "2026-11-02 16:00:00"
+              }
+            }
+          }
+        },
+        "headers": {}
+      },
+      "400": {
+        "description": "缺少/格式错误的参数、字段为空或超长、非法枚举、文件内容不合法等。 具体条件见接口业务规则。",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": [
+                "code",
+                "message",
+                "data"
+              ],
+              "properties": {
+                "code": {
+                  "type": "integer"
+                },
+                "message": {
+                  "type": "string"
+                },
+                "data": {
+                  "type": "object",
+                  "description": "错误时为null",
+                  "properties": {},
+                  "nullable": true
+                }
+              }
+            },
+            "example": {
+              "code": 400,
+              "message": "请求参数不合法",
+              "data": null
+            }
+          }
+        },
+        "headers": {}
+      },
+      "401": {
+        "description": "网页登录Token缺失、无效、过期或撤销；实训路径访问码无效。登录时还可能是账号或密码错误。 具体条件见接口业务规则。",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": [
+                "code",
+                "message",
+                "data"
+              ],
+              "properties": {
+                "code": {
+                  "type": "integer"
+                },
+                "message": {
+                  "type": "string"
+                },
+                "data": {
+                  "type": "object",
+                  "description": "错误时为null",
+                  "properties": {},
+                  "nullable": true
+                }
+              }
+            },
+            "example": {
+              "code": 401,
+              "message": "请先登录或访问码无效",
+              "data": null
+            }
+          }
+        },
+        "headers": {}
+      },
+      "404": {
+        "description": "当前空间内目标或操作人不存在；跨空间ID按照不存在处理。 具体条件见接口业务规则。",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": [
+                "code",
+                "message",
+                "data"
+              ],
+              "properties": {
+                "code": {
+                  "type": "integer"
+                },
+                "message": {
+                  "type": "string"
+                },
+                "data": {
+                  "type": "object",
+                  "description": "错误时为null",
+                  "properties": {},
+                  "nullable": true
+                }
+              }
+            },
+            "example": {
+              "code": 404,
+              "message": "当前空间内目标不存在",
+              "data": null
+            }
+          }
+        },
+        "headers": {}
+      },
+      "405": {
+        "description": "请求方法与接口不匹配。 具体条件见接口业务规则。",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": [
+                "code",
+                "message",
+                "data"
+              ],
+              "properties": {
+                "code": {
+                  "type": "integer"
+                },
+                "message": {
+                  "type": "string"
+                },
+                "data": {
+                  "type": "object",
+                  "description": "错误时为null",
+                  "properties": {},
+                  "nullable": true
+                }
+              }
+            },
+            "example": {
+              "code": 405,
+              "message": "请求方法不受支持",
+              "data": null
+            }
+          }
+        },
+        "headers": {}
+      },
+      "415": {
+        "description": "Content-Type不被当前接口接受。 具体条件见接口业务规则。",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": [
+                "code",
+                "message",
+                "data"
+              ],
+              "properties": {
+                "code": {
+                  "type": "integer"
+                },
+                "message": {
+                  "type": "string"
+                },
+                "data": {
+                  "type": "object",
+                  "description": "错误时为null",
+                  "properties": {},
+                  "nullable": true
+                }
+              }
+            },
+            "example": {
+              "code": 415,
+              "message": "请求Content-Type不受支持",
+              "data": null
+            }
+          }
+        },
+        "headers": {}
+      },
+      "500": {
+        "description": "服务端执行失败；不应作为参数错误的正常处理方式。 具体条件见接口业务规则。",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": [
+                "code",
+                "message",
+                "data"
+              ],
+              "properties": {
+                "code": {
+                  "type": "integer"
+                },
+                "message": {
+                  "type": "string"
+                },
+                "data": {
+                  "type": "object",
+                  "description": "错误时为null",
+                  "properties": {},
+                  "nullable": true
+                }
+              }
+            },
+            "example": {
+              "code": 500,
+              "message": "操作失败，请稍后重试",
+              "data": null
+            }
+          }
+        },
+        "headers": {}
+      }
+    },
+    "security": [],
+    "path": "/api/practice/{accessCode}/ticket/activities/{activityId}",
+    "method": "GET",
+    "project": "ticket",
+    "group": "activities",
+    "source": {
+      "controller": "TicketController",
+      "file": "src/main/java/com/study/vuePractiseBackend/controller/TicketController.java",
+      "line": 124,
+      "requestModel": null,
+      "responseModel": "TicketActivity"
+    }
+  },
+  {
+    "summary": "创建抢票活动草稿",
+    "deprecated": false,
+    "description": "权限：有效长期访问码；所属学生、班级、空间启用；请使用本人工作空间。模拟 ADMIN\n\n- 仅当前空间启用ADMIN创建草稿status=0，bookedCount=0由后台设置。\n- 请求时间格式为ISO日期时间，报名开始<报名结束≤活动开始<活动结束。\n- 名称≤100，校区≤50且限定两校区，地点≤200，封面URL选填≤500，quota为正整数。",
+    "operationId": "TicketController_saveNewActivity",
+    "tags": [
+      "活动管理"
+    ],
+    "parameters": [
+      {
+        "name": "accessCode",
+        "in": "path",
+        "description": "学生长期API访问码；决定workspaceId，客户端不提交workspaceId",
+        "required": true,
+        "example": "{{apiAccessCode}}",
+        "schema": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        }
+      }
+    ],
+    "requestBody": {
+      "content": {
+        "application/json": {
+          "schema": {
+            "type": "object",
+            "properties": {
+              "operatorId": {
+                "type": "integer",
+                "format": "int64",
+                "description": "当前空间的抢票模拟操作人主键，取自本项目用户列表的 id"
+              },
+              "activityName": {
+                "type": "string",
+                "description": "活动名称；≤100字符；其他规则见业务说明",
+                "maxLength": 100
+              },
+              "description": {
+                "type": "string",
+                "description": "活动介绍，选填",
+                "nullable": true
+              },
+              "coverUrl": {
+                "type": "string",
+                "description": "活动封面URL；≤500字符；其他规则见业务说明",
+                "maxLength": 500,
+                "nullable": true
+              },
+              "campus": {
+                "type": "string",
+                "description": "新吴校区或藕塘校区；≤50字符；其他规则见业务说明",
+                "enum": [
+                  "新吴校区",
+                  "藕塘校区"
+                ],
+                "maxLength": 50
+              },
+              "location": {
+                "type": "string",
+                "description": "活动地点",
+                "maxLength": 200
+              },
+              "quota": {
+                "type": "integer",
+                "format": "int32",
+                "description": "总名额，正整数；正整数；修改时不得低于bookedCount",
+                "minimum": 1
+              },
+              "bookingStartTime": {
+                "type": "string",
+                "description": "报名开始，包含该时间；请求使用 yyyy-MM-ddTHH:mm:ss"
+              },
+              "bookingEndTime": {
+                "type": "string",
+                "description": "报名结束，不包含该时间；请求使用 yyyy-MM-ddTHH:mm:ss"
+              },
+              "activityStartTime": {
+                "type": "string",
+                "description": "活动开始；请求使用 yyyy-MM-ddTHH:mm:ss"
+              },
+              "activityEndTime": {
+                "type": "string",
+                "description": "活动结束；请求使用 yyyy-MM-ddTHH:mm:ss"
+              }
+            },
+            "required": [
+              "operatorId",
+              "activityName",
+              "campus",
+              "location",
+              "quota",
+              "bookingStartTime",
+              "bookingEndTime",
+              "activityStartTime",
+              "activityEndTime"
+            ]
+          },
+          "example": {
+            "operatorId": 101,
+            "activityName": "校园秋季观影活动",
+            "description": "面向在校师生开放报名，凭有效票券入场参加观影活动。",
+            "coverUrl": null,
+            "campus": "新吴校区",
+            "location": "新吴校区大学生活动中心",
+            "quota": 30,
+            "bookingStartTime": "2026-11-01T08:00:00",
+            "bookingEndTime": "2026-11-02T12:00:00",
+            "activityStartTime": "2026-11-02T14:00:00",
+            "activityEndTime": "2026-11-02T16:00:00"
+          }
+        }
+      },
+      "required": true
+    },
+    "responses": {
+      "200": {
+        "description": "操作成功；data类型TicketActivity",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": [
+                "code",
+                "message",
+                "data"
+              ],
+              "properties": {
+                "code": {
+                  "type": "integer",
+                  "example": 200
+                },
+                "message": {
+                  "type": "string",
+                  "example": "操作成功"
+                },
+                "data": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "integer",
+                      "format": "int64",
+                      "description": "主键/编号，具体含义见接口说明",
+                      "nullable": true
+                    },
+                    "activityName": {
+                      "type": "string",
+                      "description": "活动名称",
+                      "maxLength": 100,
+                      "nullable": true
+                    },
+                    "workspaceId": {
+                      "type": "integer",
+                      "format": "int64",
+                      "description": "服务端解析的空间ID，只返回，客户端不提交",
+                      "nullable": true
+                    },
+                    "description": {
+                      "type": "string",
+                      "description": "活动介绍，选填",
+                      "nullable": true
+                    },
+                    "coverUrl": {
+                      "type": "string",
+                      "description": "活动封面URL",
+                      "maxLength": 500,
+                      "nullable": true
+                    },
+                    "campus": {
+                      "type": "string",
+                      "description": "新吴校区或藕塘校区",
+                      "maxLength": 50,
+                      "nullable": true,
+                      "enum": [
+                        "新吴校区",
+                        "藕塘校区"
+                      ]
+                    },
+                    "location": {
+                      "type": "string",
+                      "description": "活动地点",
+                      "maxLength": 200,
+                      "nullable": true
+                    },
+                    "status": {
+                      "type": "integer",
+                      "format": "int32",
+                      "description": "0：草稿；1：已发布；2：已关闭",
+                      "nullable": true,
+                      "enum": [
+                        0,
+                        1,
+                        2
+                      ]
+                    },
+                    "quota": {
+                      "type": "integer",
+                      "format": "int32",
+                      "description": "总名额，正整数",
+                      "nullable": true,
+                      "minimum": 1
+                    },
+                    "bookedCount": {
+                      "type": "integer",
+                      "format": "int32",
+                      "description": "报名人数，包含有效和已核销票券",
+                      "nullable": true
+                    },
+                    "bookingStartTime": {
+                      "type": "string",
+                      "description": "报名开始，包含该时间；返回时间格式以实际响应为准",
+                      "nullable": true
+                    },
+                    "bookingEndTime": {
+                      "type": "string",
+                      "description": "报名结束，不包含该时间；返回时间格式以实际响应为准",
+                      "nullable": true
+                    },
+                    "activityStartTime": {
+                      "type": "string",
+                      "description": "活动开始；返回时间格式以实际响应为准",
+                      "nullable": true
+                    },
+                    "activityEndTime": {
+                      "type": "string",
+                      "description": "活动结束；返回时间格式以实际响应为准",
+                      "nullable": true
+                    }
+                  }
+                }
+              }
+            },
+            "example": {
+              "code": 200,
+              "message": "操作成功",
+              "data": {
+                "id": 401,
+                "activityName": "校园秋季观影活动",
+                "workspaceId": 40,
+                "description": "面向在校师生开放报名，凭有效票券入场参加观影活动。",
+                "coverUrl": null,
+                "campus": "新吴校区",
+                "location": "新吴校区大学生活动中心",
+                "status": 0,
+                "quota": 30,
+                "bookedCount": 0,
+                "bookingStartTime": "2026-11-01 08:00:00",
+                "bookingEndTime": "2026-11-02 12:00:00",
+                "activityStartTime": "2026-11-02 14:00:00",
+                "activityEndTime": "2026-11-02 16:00:00"
+              }
+            }
+          }
+        },
+        "headers": {}
+      },
+      "400": {
+        "description": "缺少/格式错误的参数、字段为空或超长、非法枚举、文件内容不合法等。 具体条件见接口业务规则。",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": [
+                "code",
+                "message",
+                "data"
+              ],
+              "properties": {
+                "code": {
+                  "type": "integer"
+                },
+                "message": {
+                  "type": "string"
+                },
+                "data": {
+                  "type": "object",
+                  "description": "错误时为null",
+                  "properties": {},
+                  "nullable": true
+                }
+              }
+            },
+            "example": {
+              "code": 400,
+              "message": "请求参数不合法",
+              "data": null
+            }
+          }
+        },
+        "headers": {}
+      },
+      "401": {
+        "description": "网页登录Token缺失、无效、过期或撤销；实训路径访问码无效。登录时还可能是账号或密码错误。 具体条件见接口业务规则。",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": [
+                "code",
+                "message",
+                "data"
+              ],
+              "properties": {
+                "code": {
+                  "type": "integer"
+                },
+                "message": {
+                  "type": "string"
+                },
+                "data": {
+                  "type": "object",
+                  "description": "错误时为null",
+                  "properties": {},
+                  "nullable": true
+                }
+              }
+            },
+            "example": {
+              "code": 401,
+              "message": "请先登录或访问码无效",
+              "data": null
+            }
+          }
+        },
+        "headers": {}
+      },
+      "403": {
+        "description": "已识别身份但无此操作权限，或用户/班级/空间停用。跨本人系统资源访问也属于无权限。 具体条件见接口业务规则。",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": [
+                "code",
+                "message",
+                "data"
+              ],
+              "properties": {
+                "code": {
+                  "type": "integer"
+                },
+                "message": {
+                  "type": "string"
+                },
+                "data": {
+                  "type": "object",
+                  "description": "错误时为null",
+                  "properties": {},
+                  "nullable": true
+                }
+              }
+            },
+            "example": {
+              "code": 403,
+              "message": "无权执行该操作",
+              "data": null
+            }
+          }
+        },
+        "headers": {}
+      },
+      "405": {
+        "description": "请求方法与接口不匹配。 具体条件见接口业务规则。",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": [
+                "code",
+                "message",
+                "data"
+              ],
+              "properties": {
+                "code": {
+                  "type": "integer"
+                },
+                "message": {
+                  "type": "string"
+                },
+                "data": {
+                  "type": "object",
+                  "description": "错误时为null",
+                  "properties": {},
+                  "nullable": true
+                }
+              }
+            },
+            "example": {
+              "code": 405,
+              "message": "请求方法不受支持",
+              "data": null
+            }
+          }
+        },
+        "headers": {}
+      },
+      "415": {
+        "description": "Content-Type不被当前接口接受。 具体条件见接口业务规则。",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": [
+                "code",
+                "message",
+                "data"
+              ],
+              "properties": {
+                "code": {
+                  "type": "integer"
+                },
+                "message": {
+                  "type": "string"
+                },
+                "data": {
+                  "type": "object",
+                  "description": "错误时为null",
+                  "properties": {},
+                  "nullable": true
+                }
+              }
+            },
+            "example": {
+              "code": 415,
+              "message": "请求Content-Type不受支持",
+              "data": null
+            }
+          }
+        },
+        "headers": {}
+      },
+      "500": {
+        "description": "服务端执行失败；不应作为参数错误的正常处理方式。 具体条件见接口业务规则。",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": [
+                "code",
+                "message",
+                "data"
+              ],
+              "properties": {
+                "code": {
+                  "type": "integer"
+                },
+                "message": {
+                  "type": "string"
+                },
+                "data": {
+                  "type": "object",
+                  "description": "错误时为null",
+                  "properties": {},
+                  "nullable": true
+                }
+              }
+            },
+            "example": {
+              "code": 500,
+              "message": "操作失败，请稍后重试",
+              "data": null
+            }
+          }
+        },
+        "headers": {}
+      }
+    },
+    "security": [],
+    "path": "/api/practice/{accessCode}/ticket/activities",
+    "method": "POST",
+    "project": "ticket",
+    "group": "activities",
+    "source": {
+      "controller": "TicketController",
+      "file": "src/main/java/com/study/vuePractiseBackend/controller/TicketController.java",
+      "line": 139,
+      "requestModel": "TicketActivityDTO",
+      "responseModel": "TicketActivity"
+    }
+  },
+  {
+    "summary": "修改抢票活动",
+    "deprecated": false,
+    "description": "权限：有效长期访问码；所属学生、班级、空间启用；请使用本人工作空间。模拟 ADMIN\n\n- 完整提交与创建相同的字段；只允许草稿或已发布活动。\n- quota不得低于bookedCount；发布且报名已开始后，四个时间字段不得改变。\n- 不改变workspaceId、活动状态及报名人数；可修改名称等允许字段。",
+    "operationId": "TicketController_updateActivity",
+    "tags": [
+      "活动管理"
+    ],
+    "parameters": [
+      {
+        "name": "accessCode",
+        "in": "path",
+        "description": "学生长期API访问码；决定workspaceId，客户端不提交workspaceId",
+        "required": true,
+        "example": "{{apiAccessCode}}",
+        "schema": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        }
+      },
+      {
+        "name": "activityId",
+        "in": "path",
+        "description": "活动数据库主键",
+        "required": true,
+        "example": 401,
+        "schema": {
+          "type": "integer",
+          "format": "int64"
+        }
+      }
+    ],
+    "requestBody": {
+      "content": {
+        "application/json": {
+          "schema": {
+            "type": "object",
+            "properties": {
+              "operatorId": {
+                "type": "integer",
+                "format": "int64",
+                "description": "当前空间的抢票模拟操作人主键，取自本项目用户列表的 id"
+              },
+              "activityName": {
+                "type": "string",
+                "description": "活动名称；≤100字符；其他规则见业务说明",
+                "maxLength": 100
+              },
+              "description": {
+                "type": "string",
+                "description": "活动介绍，选填",
+                "nullable": true
+              },
+              "coverUrl": {
+                "type": "string",
+                "description": "活动封面URL；≤500字符；其他规则见业务说明",
+                "maxLength": 500,
+                "nullable": true
+              },
+              "campus": {
+                "type": "string",
+                "description": "新吴校区或藕塘校区；≤50字符；其他规则见业务说明",
+                "enum": [
+                  "新吴校区",
+                  "藕塘校区"
+                ],
+                "maxLength": 50
+              },
+              "location": {
+                "type": "string",
+                "description": "活动地点",
+                "maxLength": 200
+              },
+              "quota": {
+                "type": "integer",
+                "format": "int32",
+                "description": "总名额，正整数；正整数；修改时不得低于bookedCount",
+                "minimum": 1
+              },
+              "bookingStartTime": {
+                "type": "string",
+                "description": "报名开始，包含该时间；请求使用 yyyy-MM-ddTHH:mm:ss"
+              },
+              "bookingEndTime": {
+                "type": "string",
+                "description": "报名结束，不包含该时间；请求使用 yyyy-MM-ddTHH:mm:ss"
+              },
+              "activityStartTime": {
+                "type": "string",
+                "description": "活动开始；请求使用 yyyy-MM-ddTHH:mm:ss"
+              },
+              "activityEndTime": {
+                "type": "string",
+                "description": "活动结束；请求使用 yyyy-MM-ddTHH:mm:ss"
+              }
+            },
+            "required": [
+              "operatorId",
+              "activityName",
+              "campus",
+              "location",
+              "quota",
+              "bookingStartTime",
+              "bookingEndTime",
+              "activityStartTime",
+              "activityEndTime"
+            ]
+          },
+          "example": {
+            "operatorId": 101,
+            "activityName": "校园秋季观影活动",
+            "description": "面向在校师生开放报名，凭有效票券入场参加观影活动。",
+            "coverUrl": null,
+            "campus": "新吴校区",
+            "location": "新吴校区大学生活动中心",
+            "quota": 30,
+            "bookingStartTime": "2026-11-01T08:00:00",
+            "bookingEndTime": "2026-11-02T12:00:00",
+            "activityStartTime": "2026-11-02T14:00:00",
+            "activityEndTime": "2026-11-02T16:00:00"
+          }
+        }
+      },
+      "required": true
+    },
+    "responses": {
+      "200": {
+        "description": "操作成功；data类型TicketActivity",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": [
+                "code",
+                "message",
+                "data"
+              ],
+              "properties": {
+                "code": {
+                  "type": "integer",
+                  "example": 200
+                },
+                "message": {
+                  "type": "string",
+                  "example": "操作成功"
+                },
+                "data": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "integer",
+                      "format": "int64",
+                      "description": "主键/编号，具体含义见接口说明",
+                      "nullable": true
+                    },
+                    "activityName": {
+                      "type": "string",
+                      "description": "活动名称",
+                      "maxLength": 100,
+                      "nullable": true
+                    },
+                    "workspaceId": {
+                      "type": "integer",
+                      "format": "int64",
+                      "description": "服务端解析的空间ID，只返回，客户端不提交",
+                      "nullable": true
+                    },
+                    "description": {
+                      "type": "string",
+                      "description": "活动介绍，选填",
+                      "nullable": true
+                    },
+                    "coverUrl": {
+                      "type": "string",
+                      "description": "活动封面URL",
+                      "maxLength": 500,
+                      "nullable": true
+                    },
+                    "campus": {
+                      "type": "string",
+                      "description": "新吴校区或藕塘校区",
+                      "maxLength": 50,
+                      "nullable": true,
+                      "enum": [
+                        "新吴校区",
+                        "藕塘校区"
+                      ]
+                    },
+                    "location": {
+                      "type": "string",
+                      "description": "活动地点",
+                      "maxLength": 200,
+                      "nullable": true
+                    },
+                    "status": {
+                      "type": "integer",
+                      "format": "int32",
+                      "description": "0：草稿；1：已发布；2：已关闭",
+                      "nullable": true,
+                      "enum": [
+                        0,
+                        1,
+                        2
+                      ]
+                    },
+                    "quota": {
+                      "type": "integer",
+                      "format": "int32",
+                      "description": "总名额，正整数",
+                      "nullable": true,
+                      "minimum": 1
+                    },
+                    "bookedCount": {
+                      "type": "integer",
+                      "format": "int32",
+                      "description": "报名人数，包含有效和已核销票券",
+                      "nullable": true
+                    },
+                    "bookingStartTime": {
+                      "type": "string",
+                      "description": "报名开始，包含该时间；返回时间格式以实际响应为准",
+                      "nullable": true
+                    },
+                    "bookingEndTime": {
+                      "type": "string",
+                      "description": "报名结束，不包含该时间；返回时间格式以实际响应为准",
+                      "nullable": true
+                    },
+                    "activityStartTime": {
+                      "type": "string",
+                      "description": "活动开始；返回时间格式以实际响应为准",
+                      "nullable": true
+                    },
+                    "activityEndTime": {
+                      "type": "string",
+                      "description": "活动结束；返回时间格式以实际响应为准",
+                      "nullable": true
+                    }
+                  }
+                }
+              }
+            },
+            "example": {
+              "code": 200,
+              "message": "操作成功",
+              "data": {
+                "id": 401,
+                "activityName": "校园秋季观影活动",
+                "workspaceId": 40,
+                "description": "面向在校师生开放报名，凭有效票券入场参加观影活动。",
+                "coverUrl": null,
+                "campus": "新吴校区",
+                "location": "新吴校区大学生活动中心",
+                "status": 0,
+                "quota": 30,
+                "bookedCount": 0,
+                "bookingStartTime": "2026-11-01 08:00:00",
+                "bookingEndTime": "2026-11-02 12:00:00",
+                "activityStartTime": "2026-11-02 14:00:00",
+                "activityEndTime": "2026-11-02 16:00:00"
+              }
+            }
+          }
+        },
+        "headers": {}
+      },
+      "400": {
+        "description": "缺少/格式错误的参数、字段为空或超长、非法枚举、文件内容不合法等。 具体条件见接口业务规则。",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": [
+                "code",
+                "message",
+                "data"
+              ],
+              "properties": {
+                "code": {
+                  "type": "integer"
+                },
+                "message": {
+                  "type": "string"
+                },
+                "data": {
+                  "type": "object",
+                  "description": "错误时为null",
+                  "properties": {},
+                  "nullable": true
+                }
+              }
+            },
+            "example": {
+              "code": 400,
+              "message": "请求参数不合法",
+              "data": null
+            }
+          }
+        },
+        "headers": {}
+      },
+      "401": {
+        "description": "网页登录Token缺失、无效、过期或撤销；实训路径访问码无效。登录时还可能是账号或密码错误。 具体条件见接口业务规则。",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": [
+                "code",
+                "message",
+                "data"
+              ],
+              "properties": {
+                "code": {
+                  "type": "integer"
+                },
+                "message": {
+                  "type": "string"
+                },
+                "data": {
+                  "type": "object",
+                  "description": "错误时为null",
+                  "properties": {},
+                  "nullable": true
+                }
+              }
+            },
+            "example": {
+              "code": 401,
+              "message": "请先登录或访问码无效",
+              "data": null
+            }
+          }
+        },
+        "headers": {}
+      },
+      "403": {
+        "description": "已识别身份但无此操作权限，或用户/班级/空间停用。跨本人系统资源访问也属于无权限。 具体条件见接口业务规则。",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": [
+                "code",
+                "message",
+                "data"
+              ],
+              "properties": {
+                "code": {
+                  "type": "integer"
+                },
+                "message": {
+                  "type": "string"
+                },
+                "data": {
+                  "type": "object",
+                  "description": "错误时为null",
+                  "properties": {},
+                  "nullable": true
+                }
+              }
+            },
+            "example": {
+              "code": 403,
+              "message": "无权执行该操作",
+              "data": null
+            }
+          }
+        },
+        "headers": {}
+      },
+      "404": {
+        "description": "当前空间内目标或操作人不存在；跨空间ID按照不存在处理。 具体条件见接口业务规则。",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": [
+                "code",
+                "message",
+                "data"
+              ],
+              "properties": {
+                "code": {
+                  "type": "integer"
+                },
+                "message": {
+                  "type": "string"
+                },
+                "data": {
+                  "type": "object",
+                  "description": "错误时为null",
+                  "properties": {},
+                  "nullable": true
+                }
+              }
+            },
+            "example": {
+              "code": 404,
+              "message": "当前空间内目标不存在",
+              "data": null
+            }
+          }
+        },
+        "headers": {}
+      },
+      "405": {
+        "description": "请求方法与接口不匹配。 具体条件见接口业务规则。",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": [
+                "code",
+                "message",
+                "data"
+              ],
+              "properties": {
+                "code": {
+                  "type": "integer"
+                },
+                "message": {
+                  "type": "string"
+                },
+                "data": {
+                  "type": "object",
+                  "description": "错误时为null",
+                  "properties": {},
+                  "nullable": true
+                }
+              }
+            },
+            "example": {
+              "code": 405,
+              "message": "请求方法不受支持",
+              "data": null
+            }
+          }
+        },
+        "headers": {}
+      },
+      "409": {
+        "description": "当前状态不允许操作、重复业务、名额耗尽或存在业务引用等。 具体条件见接口业务规则。",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": [
+                "code",
+                "message",
+                "data"
+              ],
+              "properties": {
+                "code": {
+                  "type": "integer"
+                },
+                "message": {
+                  "type": "string"
+                },
+                "data": {
+                  "type": "object",
+                  "description": "错误时为null",
+                  "properties": {},
+                  "nullable": true
+                }
+              }
+            },
+            "example": {
+              "code": 409,
+              "message": "当前状态不允许该操作",
+              "data": null
+            }
+          }
+        },
+        "headers": {}
+      },
+      "415": {
+        "description": "Content-Type不被当前接口接受。 具体条件见接口业务规则。",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": [
+                "code",
+                "message",
+                "data"
+              ],
+              "properties": {
+                "code": {
+                  "type": "integer"
+                },
+                "message": {
+                  "type": "string"
+                },
+                "data": {
+                  "type": "object",
+                  "description": "错误时为null",
+                  "properties": {},
+                  "nullable": true
+                }
+              }
+            },
+            "example": {
+              "code": 415,
+              "message": "请求Content-Type不受支持",
+              "data": null
+            }
+          }
+        },
+        "headers": {}
+      },
+      "500": {
+        "description": "服务端执行失败；不应作为参数错误的正常处理方式。 具体条件见接口业务规则。",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": [
+                "code",
+                "message",
+                "data"
+              ],
+              "properties": {
+                "code": {
+                  "type": "integer"
+                },
+                "message": {
+                  "type": "string"
+                },
+                "data": {
+                  "type": "object",
+                  "description": "错误时为null",
+                  "properties": {},
+                  "nullable": true
+                }
+              }
+            },
+            "example": {
+              "code": 500,
+              "message": "操作失败，请稍后重试",
+              "data": null
+            }
+          }
+        },
+        "headers": {}
+      }
+    },
+    "security": [],
+    "path": "/api/practice/{accessCode}/ticket/activities/{activityId}",
+    "method": "PUT",
+    "project": "ticket",
+    "group": "activities",
+    "source": {
+      "controller": "TicketController",
+      "file": "src/main/java/com/study/vuePractiseBackend/controller/TicketController.java",
+      "line": 160,
+      "requestModel": "TicketActivityUpdateDTO",
+      "responseModel": "TicketActivity"
+    }
+  },
+  {
+    "summary": "发布或关闭抢票活动",
+    "deprecated": false,
+    "description": "权限：有效长期访问码；所属学生、班级、空间启用；请使用本人工作空间。模拟 ADMIN\n\n- 仅ADMIN；允许0→1发布、1→2关闭；目标只能1或2，重复目标状态幂等。\n- 发布前检查字段、时间、名额；报名已结束不能发布，关闭后不支持重新发布。",
+    "operationId": "TicketController_changeActivityStatus",
+    "tags": [
+      "活动管理"
+    ],
+    "parameters": [
+      {
+        "name": "accessCode",
+        "in": "path",
+        "description": "学生长期API访问码；决定workspaceId，客户端不提交workspaceId",
+        "required": true,
+        "example": "{{apiAccessCode}}",
+        "schema": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        }
+      },
+      {
+        "name": "activityId",
+        "in": "path",
+        "description": "活动数据库主键",
+        "required": true,
+        "example": 401,
+        "schema": {
+          "type": "integer",
+          "format": "int64"
+        }
+      }
+    ],
+    "requestBody": {
+      "content": {
+        "application/json": {
+          "schema": {
+            "type": "object",
+            "properties": {
+              "operatorId": {
+                "type": "integer",
+                "format": "int64",
+                "description": "当前空间的抢票模拟操作人主键，取自本项目用户列表的 id"
+              },
+              "status": {
+                "type": "integer",
+                "format": "int32",
+                "description": "1：发布；2：关闭",
+                "enum": [
+                  1,
+                  2
+                ]
+              }
+            },
+            "required": [
+              "operatorId",
+              "status"
+            ]
+          },
+          "example": {
+            "operatorId": 101,
+            "status": 1
+          }
+        }
+      },
+      "required": true
+    },
+    "responses": {
+      "200": {
+        "description": "操作成功；data类型TicketActivity",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": [
+                "code",
+                "message",
+                "data"
+              ],
+              "properties": {
+                "code": {
+                  "type": "integer",
+                  "example": 200
+                },
+                "message": {
+                  "type": "string",
+                  "example": "操作成功"
+                },
+                "data": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "integer",
+                      "format": "int64",
+                      "description": "主键/编号，具体含义见接口说明",
+                      "nullable": true
+                    },
+                    "activityName": {
+                      "type": "string",
+                      "description": "活动名称",
+                      "maxLength": 100,
+                      "nullable": true
+                    },
+                    "workspaceId": {
+                      "type": "integer",
+                      "format": "int64",
+                      "description": "服务端解析的空间ID，只返回，客户端不提交",
+                      "nullable": true
+                    },
+                    "description": {
+                      "type": "string",
+                      "description": "活动介绍，选填",
+                      "nullable": true
+                    },
+                    "coverUrl": {
+                      "type": "string",
+                      "description": "活动封面URL",
+                      "maxLength": 500,
+                      "nullable": true
+                    },
+                    "campus": {
+                      "type": "string",
+                      "description": "新吴校区或藕塘校区",
+                      "maxLength": 50,
+                      "nullable": true,
+                      "enum": [
+                        "新吴校区",
+                        "藕塘校区"
+                      ]
+                    },
+                    "location": {
+                      "type": "string",
+                      "description": "活动地点",
+                      "maxLength": 200,
+                      "nullable": true
+                    },
+                    "status": {
+                      "type": "integer",
+                      "format": "int32",
+                      "description": "0：草稿；1：已发布；2：已关闭",
+                      "nullable": true,
+                      "enum": [
+                        0,
+                        1,
+                        2
+                      ]
+                    },
+                    "quota": {
+                      "type": "integer",
+                      "format": "int32",
+                      "description": "总名额，正整数",
+                      "nullable": true,
+                      "minimum": 1
+                    },
+                    "bookedCount": {
+                      "type": "integer",
+                      "format": "int32",
+                      "description": "报名人数，包含有效和已核销票券",
+                      "nullable": true
+                    },
+                    "bookingStartTime": {
+                      "type": "string",
+                      "description": "报名开始，包含该时间；返回时间格式以实际响应为准",
+                      "nullable": true
+                    },
+                    "bookingEndTime": {
+                      "type": "string",
+                      "description": "报名结束，不包含该时间；返回时间格式以实际响应为准",
+                      "nullable": true
+                    },
+                    "activityStartTime": {
+                      "type": "string",
+                      "description": "活动开始；返回时间格式以实际响应为准",
+                      "nullable": true
+                    },
+                    "activityEndTime": {
+                      "type": "string",
+                      "description": "活动结束；返回时间格式以实际响应为准",
+                      "nullable": true
+                    }
+                  }
+                }
+              }
+            },
+            "example": {
+              "code": 200,
+              "message": "操作成功",
+              "data": {
+                "id": 401,
+                "activityName": "校园秋季观影活动",
+                "workspaceId": 40,
+                "description": "面向在校师生开放报名，凭有效票券入场参加观影活动。",
+                "coverUrl": null,
+                "campus": "新吴校区",
+                "location": "新吴校区大学生活动中心",
+                "status": 1,
+                "quota": 30,
+                "bookedCount": 0,
+                "bookingStartTime": "2026-11-01 08:00:00",
+                "bookingEndTime": "2026-11-02 12:00:00",
+                "activityStartTime": "2026-11-02 14:00:00",
+                "activityEndTime": "2026-11-02 16:00:00"
+              }
+            }
+          }
+        },
+        "headers": {}
+      },
+      "400": {
+        "description": "缺少/格式错误的参数、字段为空或超长、非法枚举、文件内容不合法等。 具体条件见接口业务规则。",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": [
+                "code",
+                "message",
+                "data"
+              ],
+              "properties": {
+                "code": {
+                  "type": "integer"
+                },
+                "message": {
+                  "type": "string"
+                },
+                "data": {
+                  "type": "object",
+                  "description": "错误时为null",
+                  "properties": {},
+                  "nullable": true
+                }
+              }
+            },
+            "example": {
+              "code": 400,
+              "message": "请求参数不合法",
+              "data": null
+            }
+          }
+        },
+        "headers": {}
+      },
+      "401": {
+        "description": "网页登录Token缺失、无效、过期或撤销；实训路径访问码无效。登录时还可能是账号或密码错误。 具体条件见接口业务规则。",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": [
+                "code",
+                "message",
+                "data"
+              ],
+              "properties": {
+                "code": {
+                  "type": "integer"
+                },
+                "message": {
+                  "type": "string"
+                },
+                "data": {
+                  "type": "object",
+                  "description": "错误时为null",
+                  "properties": {},
+                  "nullable": true
+                }
+              }
+            },
+            "example": {
+              "code": 401,
+              "message": "请先登录或访问码无效",
+              "data": null
+            }
+          }
+        },
+        "headers": {}
+      },
+      "403": {
+        "description": "已识别身份但无此操作权限，或用户/班级/空间停用。跨本人系统资源访问也属于无权限。 具体条件见接口业务规则。",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": [
+                "code",
+                "message",
+                "data"
+              ],
+              "properties": {
+                "code": {
+                  "type": "integer"
+                },
+                "message": {
+                  "type": "string"
+                },
+                "data": {
+                  "type": "object",
+                  "description": "错误时为null",
+                  "properties": {},
+                  "nullable": true
+                }
+              }
+            },
+            "example": {
+              "code": 403,
+              "message": "无权执行该操作",
+              "data": null
+            }
+          }
+        },
+        "headers": {}
+      },
+      "404": {
+        "description": "当前空间内目标或操作人不存在；跨空间ID按照不存在处理。 具体条件见接口业务规则。",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": [
+                "code",
+                "message",
+                "data"
+              ],
+              "properties": {
+                "code": {
+                  "type": "integer"
+                },
+                "message": {
+                  "type": "string"
+                },
+                "data": {
+                  "type": "object",
+                  "description": "错误时为null",
+                  "properties": {},
+                  "nullable": true
+                }
+              }
+            },
+            "example": {
+              "code": 404,
+              "message": "当前空间内目标不存在",
+              "data": null
+            }
+          }
+        },
+        "headers": {}
+      },
+      "405": {
+        "description": "请求方法与接口不匹配。 具体条件见接口业务规则。",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": [
+                "code",
+                "message",
+                "data"
+              ],
+              "properties": {
+                "code": {
+                  "type": "integer"
+                },
+                "message": {
+                  "type": "string"
+                },
+                "data": {
+                  "type": "object",
+                  "description": "错误时为null",
+                  "properties": {},
+                  "nullable": true
+                }
+              }
+            },
+            "example": {
+              "code": 405,
+              "message": "请求方法不受支持",
+              "data": null
+            }
+          }
+        },
+        "headers": {}
+      },
+      "409": {
+        "description": "当前状态不允许操作、重复业务、名额耗尽或存在业务引用等。 具体条件见接口业务规则。",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": [
+                "code",
+                "message",
+                "data"
+              ],
+              "properties": {
+                "code": {
+                  "type": "integer"
+                },
+                "message": {
+                  "type": "string"
+                },
+                "data": {
+                  "type": "object",
+                  "description": "错误时为null",
+                  "properties": {},
+                  "nullable": true
+                }
+              }
+            },
+            "example": {
+              "code": 409,
+              "message": "当前状态不允许该操作",
+              "data": null
+            }
+          }
+        },
+        "headers": {}
+      },
+      "415": {
+        "description": "Content-Type不被当前接口接受。 具体条件见接口业务规则。",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": [
+                "code",
+                "message",
+                "data"
+              ],
+              "properties": {
+                "code": {
+                  "type": "integer"
+                },
+                "message": {
+                  "type": "string"
+                },
+                "data": {
+                  "type": "object",
+                  "description": "错误时为null",
+                  "properties": {},
+                  "nullable": true
+                }
+              }
+            },
+            "example": {
+              "code": 415,
+              "message": "请求Content-Type不受支持",
+              "data": null
+            }
+          }
+        },
+        "headers": {}
+      },
+      "500": {
+        "description": "服务端执行失败；不应作为参数错误的正常处理方式。 具体条件见接口业务规则。",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": [
+                "code",
+                "message",
+                "data"
+              ],
+              "properties": {
+                "code": {
+                  "type": "integer"
+                },
+                "message": {
+                  "type": "string"
+                },
+                "data": {
+                  "type": "object",
+                  "description": "错误时为null",
+                  "properties": {},
+                  "nullable": true
+                }
+              }
+            },
+            "example": {
+              "code": 500,
+              "message": "操作失败，请稍后重试",
+              "data": null
+            }
+          }
+        },
+        "headers": {}
+      }
+    },
+    "security": [],
+    "path": "/api/practice/{accessCode}/ticket/activities/{activityId}/status",
+    "method": "PUT",
+    "project": "ticket",
+    "group": "activities",
+    "source": {
+      "controller": "TicketController",
+      "file": "src/main/java/com/study/vuePractiseBackend/controller/TicketController.java",
+      "line": 151,
+      "requestModel": "TicketActivityStatusDTO",
+      "responseModel": "TicketActivity"
+    }
+  },
+  {
+    "summary": "删除抢票活动草稿",
+    "deprecated": false,
+    "description": "权限：有效长期访问码；所属学生、班级、空间启用；请使用本人工作空间。模拟 ADMIN\n\n- 仅ADMIN，只有草稿可删除，且必须没有任何票券历史、bookedCount=0。\n- 已取消票券也是历史，不允许通过删除活动清掉记录。",
+    "operationId": "TicketController_deleteActivity",
+    "tags": [
+      "活动管理"
+    ],
+    "parameters": [
+      {
+        "name": "accessCode",
+        "in": "path",
+        "description": "学生长期API访问码；决定workspaceId，客户端不提交workspaceId",
+        "required": true,
+        "example": "{{apiAccessCode}}",
+        "schema": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        }
+      },
+      {
+        "name": "activityId",
+        "in": "path",
+        "description": "活动数据库主键",
+        "required": true,
+        "example": 401,
+        "schema": {
+          "type": "integer",
+          "format": "int64"
+        }
+      },
+      {
+        "name": "operatorId",
+        "in": "query",
+        "description": "当前空间的抢票模拟操作人主键，请从本项目用户列表查询",
+        "required": true,
+        "example": 101,
+        "schema": {
+          "type": "integer",
+          "format": "int64"
+        }
+      }
+    ],
+    "responses": {
+      "200": {
+        "description": "操作成功；data类型Integer",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": [
+                "code",
+                "message",
+                "data"
+              ],
+              "properties": {
+                "code": {
+                  "type": "integer",
+                  "example": 200
+                },
+                "message": {
+                  "type": "string",
+                  "example": "操作成功"
+                },
+                "data": {
+                  "type": "integer"
+                }
+              }
+            },
+            "example": {
+              "code": 200,
+              "message": "操作成功",
+              "data": 1
+            }
+          }
+        },
+        "headers": {}
+      },
+      "400": {
+        "description": "缺少/格式错误的参数、字段为空或超长、非法枚举、文件内容不合法等。 具体条件见接口业务规则。",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": [
+                "code",
+                "message",
+                "data"
+              ],
+              "properties": {
+                "code": {
+                  "type": "integer"
+                },
+                "message": {
+                  "type": "string"
+                },
+                "data": {
+                  "type": "object",
+                  "description": "错误时为null",
+                  "properties": {},
+                  "nullable": true
+                }
+              }
+            },
+            "example": {
+              "code": 400,
+              "message": "请求参数不合法",
+              "data": null
+            }
+          }
+        },
+        "headers": {}
+      },
+      "401": {
+        "description": "网页登录Token缺失、无效、过期或撤销；实训路径访问码无效。登录时还可能是账号或密码错误。 具体条件见接口业务规则。",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": [
+                "code",
+                "message",
+                "data"
+              ],
+              "properties": {
+                "code": {
+                  "type": "integer"
+                },
+                "message": {
+                  "type": "string"
+                },
+                "data": {
+                  "type": "object",
+                  "description": "错误时为null",
+                  "properties": {},
+                  "nullable": true
+                }
+              }
+            },
+            "example": {
+              "code": 401,
+              "message": "请先登录或访问码无效",
+              "data": null
+            }
+          }
+        },
+        "headers": {}
+      },
+      "403": {
+        "description": "已识别身份但无此操作权限，或用户/班级/空间停用。跨本人系统资源访问也属于无权限。 具体条件见接口业务规则。",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": [
+                "code",
+                "message",
+                "data"
+              ],
+              "properties": {
+                "code": {
+                  "type": "integer"
+                },
+                "message": {
+                  "type": "string"
+                },
+                "data": {
+                  "type": "object",
+                  "description": "错误时为null",
+                  "properties": {},
+                  "nullable": true
+                }
+              }
+            },
+            "example": {
+              "code": 403,
+              "message": "无权执行该操作",
+              "data": null
+            }
+          }
+        },
+        "headers": {}
+      },
+      "404": {
+        "description": "当前空间内目标或操作人不存在；跨空间ID按照不存在处理。 具体条件见接口业务规则。",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": [
+                "code",
+                "message",
+                "data"
+              ],
+              "properties": {
+                "code": {
+                  "type": "integer"
+                },
+                "message": {
+                  "type": "string"
+                },
+                "data": {
+                  "type": "object",
+                  "description": "错误时为null",
+                  "properties": {},
+                  "nullable": true
+                }
+              }
+            },
+            "example": {
+              "code": 404,
+              "message": "当前空间内目标不存在",
+              "data": null
+            }
+          }
+        },
+        "headers": {}
+      },
+      "405": {
+        "description": "请求方法与接口不匹配。 具体条件见接口业务规则。",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": [
+                "code",
+                "message",
+                "data"
+              ],
+              "properties": {
+                "code": {
+                  "type": "integer"
+                },
+                "message": {
+                  "type": "string"
+                },
+                "data": {
+                  "type": "object",
+                  "description": "错误时为null",
+                  "properties": {},
+                  "nullable": true
+                }
+              }
+            },
+            "example": {
+              "code": 405,
+              "message": "请求方法不受支持",
+              "data": null
+            }
+          }
+        },
+        "headers": {}
+      },
+      "409": {
+        "description": "当前状态不允许操作、重复业务、名额耗尽或存在业务引用等。 具体条件见接口业务规则。",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": [
+                "code",
+                "message",
+                "data"
+              ],
+              "properties": {
+                "code": {
+                  "type": "integer"
+                },
+                "message": {
+                  "type": "string"
+                },
+                "data": {
+                  "type": "object",
+                  "description": "错误时为null",
+                  "properties": {},
+                  "nullable": true
+                }
+              }
+            },
+            "example": {
+              "code": 409,
+              "message": "当前状态不允许该操作",
+              "data": null
+            }
+          }
+        },
+        "headers": {}
+      },
+      "415": {
+        "description": "Content-Type不被当前接口接受。 具体条件见接口业务规则。",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": [
+                "code",
+                "message",
+                "data"
+              ],
+              "properties": {
+                "code": {
+                  "type": "integer"
+                },
+                "message": {
+                  "type": "string"
+                },
+                "data": {
+                  "type": "object",
+                  "description": "错误时为null",
+                  "properties": {},
+                  "nullable": true
+                }
+              }
+            },
+            "example": {
+              "code": 415,
+              "message": "请求Content-Type不受支持",
+              "data": null
+            }
+          }
+        },
+        "headers": {}
+      },
+      "500": {
+        "description": "服务端执行失败；不应作为参数错误的正常处理方式。 具体条件见接口业务规则。",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": [
+                "code",
+                "message",
+                "data"
+              ],
+              "properties": {
+                "code": {
+                  "type": "integer"
+                },
+                "message": {
+                  "type": "string"
+                },
+                "data": {
+                  "type": "object",
+                  "description": "错误时为null",
+                  "properties": {},
+                  "nullable": true
+                }
+              }
+            },
+            "example": {
+              "code": 500,
+              "message": "操作失败，请稍后重试",
+              "data": null
+            }
+          }
+        },
+        "headers": {}
+      }
+    },
+    "security": [],
+    "path": "/api/practice/{accessCode}/ticket/activities/{activityId}",
+    "method": "DELETE",
+    "project": "ticket",
+    "group": "activities",
+    "source": {
+      "controller": "TicketController",
+      "file": "src/main/java/com/study/vuePractiseBackend/controller/TicketController.java",
+      "line": 169,
+      "requestModel": null,
+      "responseModel": "Integer"
+    }
+  }
+]

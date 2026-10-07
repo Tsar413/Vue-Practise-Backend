@@ -1,0 +1,7 @@
+<script setup>
+import {practiceBase} from '../api/client'
+import {copy} from '../composables/ui'
+const bases={ticket:practiceBase('ticket'),repair:practiceBase('repair')}
+const example=`import axios from 'axios'\n\nconst request = axios.create({\n  baseURL: '${bases.ticket}',\n  timeout: 15000\n})\n\n// 基础地址已包含 /ticket，只添加接口后缀\nconst response = await request.get('/activities')\nif (response.data.code === 200) {\n  console.log(response.data.data)\n}`
+</script>
+<template><h1>我的接口地址</h1><p>请复制对应项目的接口基础地址，作为你在 Vue 项目中配置的请求地址。</p><section v-for="(url,k) in bases" :key="k" class="panel"><div class="section-heading"><h2>{{k==='ticket'?'校园抢票':'校园报修'}}基础地址</h2><button @click="copy(url)">复制地址</button></div><code class="address">{{url}}</code><p>查询{{k==='ticket'?'活动':'设备'}}时，在此基础地址后添加 <code>{{k==='ticket'?'/activities':'/devices'}}</code>。请勿重复添加 <code>/{{k}}</code>。</p></section><section class="panel"><div class="section-heading"><h2>在你的 Vue 项目中使用</h2><button class="secondary" @click="copy(example)">复制示例</button></div><pre>{{example}}</pre></section><section class="panel"><h2>开始前，请分清这些编号</h2><dl class="guide-list"><dt>网页登录凭证</dt><dd>token 用于平台登录后的系统操作，通过 Authorization: Bearer 原始token 发送；请勿再次哈希或使用 tokenHash。</dd><dt>实训访问码</dt><dd>apiAccessCode 已包含在你的接口地址中，对应本人工作空间。实训请求无需携带网页登录 token，请使用本人地址。</dd><dt>学号与模拟身份</dt><dd>学号是系统登录账号；userNo 是项目内模拟编号；模拟用户数据库 ID 是列表中的 id。业务 operatorId 和票券 userId 使用数据库 ID。抢票用户详情路径中的 userId 是 userNo。</dd><dt>重置后的数据</dt><dd>重置后，请重新查询数据，不要继续使用原来的活动或工单ID。访问码保持不变。</dd></dl></section></template>

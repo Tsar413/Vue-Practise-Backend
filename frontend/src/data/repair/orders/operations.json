@@ -1,0 +1,4751 @@
+[
+  {
+    "summary": "按角色查询工单列表",
+    "deprecated": false,
+    "description": "权限：有效长期访问码；所属学生、班级、空间启用；请使用本人工作空间。REPORTER仅本人；MAINTAINER按ASSIGNED/PARTICIPATED；ADMIN全部\n\n- REPORTER仅本人报修工单；ADMIN当前空间全部；MAINTAINER默认当前分派本人。\n- scope仅用于师傅：ASSIGNED默认当前分派，PARTICIPATED查询曾参与处理的工单。\n- keyword模糊匹配工单编号或标题；校区/类型精确匹配，状态0～5，按工单ID降序，不分页。",
+    "operationId": "RepairController_getOrders",
+    "tags": [
+      "工单管理"
+    ],
+    "parameters": [
+      {
+        "name": "accessCode",
+        "in": "path",
+        "description": "学生长期API访问码；决定workspaceId，客户端不提交workspaceId",
+        "required": true,
+        "example": "{{apiAccessCode}}",
+        "schema": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        }
+      },
+      {
+        "name": "operatorId",
+        "in": "query",
+        "description": "当前空间的报修模拟操作人主键，请从本项目用户列表查询",
+        "required": true,
+        "example": 101,
+        "schema": {
+          "type": "integer",
+          "format": "int64"
+        }
+      },
+      {
+        "name": "status",
+        "in": "query",
+        "description": "状态枚举，见状态字典",
+        "required": false,
+        "example": 1,
+        "schema": {
+          "type": "integer",
+          "format": "int32",
+          "enum": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        }
+      },
+      {
+        "name": "campus",
+        "in": "query",
+        "description": "新吴校区或藕塘校区",
+        "required": false,
+        "example": "新吴校区",
+        "schema": {
+          "type": "string"
+        }
+      },
+      {
+        "name": "deviceType",
+        "in": "query",
+        "description": "设备大类名称，普通字符串",
+        "required": false,
+        "example": "空调",
+        "schema": {
+          "type": "string"
+        }
+      },
+      {
+        "name": "keyword",
+        "in": "query",
+        "description": "模糊搜索关键词",
+        "required": false,
+        "example": "空调",
+        "schema": {
+          "type": "string"
+        }
+      },
+      {
+        "name": "scope",
+        "in": "query",
+        "description": "师傅查询范围ASSIGNED/PARTICIPATED",
+        "required": false,
+        "example": "ASSIGNED",
+        "schema": {
+          "type": "string",
+          "enum": [
+            "ASSIGNED",
+            "PARTICIPATED"
+          ]
+        }
+      }
+    ],
+    "responses": {
+      "200": {
+        "description": "操作成功；data类型List<RepairOrder>",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": [
+                "code",
+                "message",
+                "data"
+              ],
+              "properties": {
+                "code": {
+                  "type": "integer",
+                  "example": 200
+                },
+                "message": {
+                  "type": "string",
+                  "example": "操作成功"
+                },
+                "data": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "integer",
+                        "format": "int64",
+                        "description": "主键/编号，具体含义见接口说明",
+                        "nullable": true
+                      },
+                      "workspaceId": {
+                        "type": "integer",
+                        "format": "int64",
+                        "description": "服务端解析的空间ID，只返回，客户端不提交",
+                        "nullable": true
+                      },
+                      "orderNo": {
+                        "type": "string",
+                        "description": "后端生成BX开头编号",
+                        "maxLength": 64,
+                        "nullable": true
+                      },
+                      "deviceId": {
+                        "type": "integer",
+                        "format": "int64",
+                        "description": "设备数据库主键；无登记设备可不传",
+                        "nullable": true
+                      },
+                      "deviceName": {
+                        "type": "string",
+                        "description": "设备名称",
+                        "maxLength": 100,
+                        "nullable": true
+                      },
+                      "deviceType": {
+                        "type": "string",
+                        "description": "设备大类名称，普通字符串",
+                        "maxLength": 50,
+                        "nullable": true
+                      },
+                      "location": {
+                        "type": "string",
+                        "description": "设备所在地点（工单保存报修时的位置）",
+                        "maxLength": 200,
+                        "nullable": true
+                      },
+                      "title": {
+                        "type": "string",
+                        "description": "工单标题",
+                        "maxLength": 100,
+                        "nullable": true
+                      },
+                      "description": {
+                        "type": "string",
+                        "description": "故障详细描述，允许后端清洗后的 HTML；必须包含有效文字",
+                        "nullable": true
+                      },
+                      "reporterId": {
+                        "type": "integer",
+                        "format": "int64",
+                        "description": "报修人模拟数据库主键",
+                        "nullable": true
+                      },
+                      "contactPhone": {
+                        "type": "string",
+                        "description": "本次报修电话，不传尝试用户电话",
+                        "maxLength": 20,
+                        "nullable": true
+                      },
+                      "maintainerId": {
+                        "type": "integer",
+                        "format": "int64",
+                        "description": "目标维修师傅数据库主键",
+                        "nullable": true
+                      },
+                      "status": {
+                        "type": "integer",
+                        "format": "int32",
+                        "description": "0：已撤销；1：待分派；2：待接单；3：维修中；4：待确认；5：已完成",
+                        "nullable": true,
+                        "enum": [
+                          0,
+                          1,
+                          2,
+                          3,
+                          4,
+                          5
+                        ]
+                      },
+                      "campus": {
+                        "type": "string",
+                        "description": "新吴校区或藕塘校区",
+                        "maxLength": 50,
+                        "nullable": true,
+                        "enum": [
+                          "新吴校区",
+                          "藕塘校区"
+                        ]
+                      },
+                      "repairResult": {
+                        "type": "string",
+                        "description": "简短维修结果说明，普通文本",
+                        "nullable": true
+                      },
+                      "completedTime": {
+                        "type": "string",
+                        "description": "报修人确认完成的时间，未完成时为空；返回时间格式以实际响应为准",
+                        "nullable": true
+                      },
+                      "cancelTime": {
+                        "type": "string",
+                        "description": "业务字段；返回时间格式以实际响应为准",
+                        "nullable": true
+                      },
+                      "createTime": {
+                        "type": "string",
+                        "description": "创建时间；返回时间格式以实际响应为准",
+                        "nullable": true
+                      },
+                      "updateTime": {
+                        "type": "string",
+                        "description": "更新时间；返回时间格式以实际响应为准",
+                        "nullable": true
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "example": {
+              "code": 200,
+              "message": "操作成功",
+              "data": [
+                {
+                  "id": 301,
+                  "workspaceId": 40,
+                  "orderNo": "BX0123456789abcdef0123456789abcdef",
+                  "deviceId": 201,
+                  "deviceName": "教室空调",
+                  "deviceType": "空调",
+                  "location": "致用楼416教室",
+                  "title": "教室空调制冷异常",
+                  "description": "<p>设备运行后无法正常制冷。</p>",
+                  "reporterId": 102,
+                  "contactPhone": "13800000000",
+                  "maintainerId": null,
+                  "status": 1,
+                  "campus": "新吴校区",
+                  "repairResult": null,
+                  "completedTime": null,
+                  "cancelTime": null,
+                  "createTime": "2026-11-01 09:00:00",
+                  "updateTime": "2026-11-01 10:00:00"
+                }
+              ]
+            }
+          }
+        },
+        "headers": {}
+      },
+      "400": {
+        "description": "缺少/格式错误的参数、字段为空或超长、非法枚举、文件内容不合法等。 具体条件见接口业务规则。",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": [
+                "code",
+                "message",
+                "data"
+              ],
+              "properties": {
+                "code": {
+                  "type": "integer"
+                },
+                "message": {
+                  "type": "string"
+                },
+                "data": {
+                  "type": "object",
+                  "description": "错误时为null",
+                  "properties": {},
+                  "nullable": true
+                }
+              }
+            },
+            "example": {
+              "code": 400,
+              "message": "请求参数不合法",
+              "data": null
+            }
+          }
+        },
+        "headers": {}
+      },
+      "401": {
+        "description": "网页登录Token缺失、无效、过期或撤销；实训路径访问码无效。登录时还可能是账号或密码错误。 具体条件见接口业务规则。",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": [
+                "code",
+                "message",
+                "data"
+              ],
+              "properties": {
+                "code": {
+                  "type": "integer"
+                },
+                "message": {
+                  "type": "string"
+                },
+                "data": {
+                  "type": "object",
+                  "description": "错误时为null",
+                  "properties": {},
+                  "nullable": true
+                }
+              }
+            },
+            "example": {
+              "code": 401,
+              "message": "请先登录或访问码无效",
+              "data": null
+            }
+          }
+        },
+        "headers": {}
+      },
+      "404": {
+        "description": "当前空间内目标或操作人不存在；跨空间ID按照不存在处理。 具体条件见接口业务规则。",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": [
+                "code",
+                "message",
+                "data"
+              ],
+              "properties": {
+                "code": {
+                  "type": "integer"
+                },
+                "message": {
+                  "type": "string"
+                },
+                "data": {
+                  "type": "object",
+                  "description": "错误时为null",
+                  "properties": {},
+                  "nullable": true
+                }
+              }
+            },
+            "example": {
+              "code": 404,
+              "message": "当前空间内目标不存在",
+              "data": null
+            }
+          }
+        },
+        "headers": {}
+      },
+      "405": {
+        "description": "请求方法与接口不匹配。 具体条件见接口业务规则。",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": [
+                "code",
+                "message",
+                "data"
+              ],
+              "properties": {
+                "code": {
+                  "type": "integer"
+                },
+                "message": {
+                  "type": "string"
+                },
+                "data": {
+                  "type": "object",
+                  "description": "错误时为null",
+                  "properties": {},
+                  "nullable": true
+                }
+              }
+            },
+            "example": {
+              "code": 405,
+              "message": "请求方法不受支持",
+              "data": null
+            }
+          }
+        },
+        "headers": {}
+      },
+      "415": {
+        "description": "Content-Type不被当前接口接受。 具体条件见接口业务规则。",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": [
+                "code",
+                "message",
+                "data"
+              ],
+              "properties": {
+                "code": {
+                  "type": "integer"
+                },
+                "message": {
+                  "type": "string"
+                },
+                "data": {
+                  "type": "object",
+                  "description": "错误时为null",
+                  "properties": {},
+                  "nullable": true
+                }
+              }
+            },
+            "example": {
+              "code": 415,
+              "message": "请求Content-Type不受支持",
+              "data": null
+            }
+          }
+        },
+        "headers": {}
+      },
+      "500": {
+        "description": "服务端执行失败；不应作为参数错误的正常处理方式。 具体条件见接口业务规则。",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": [
+                "code",
+                "message",
+                "data"
+              ],
+              "properties": {
+                "code": {
+                  "type": "integer"
+                },
+                "message": {
+                  "type": "string"
+                },
+                "data": {
+                  "type": "object",
+                  "description": "错误时为null",
+                  "properties": {},
+                  "nullable": true
+                }
+              }
+            },
+            "example": {
+              "code": 500,
+              "message": "操作失败，请稍后重试",
+              "data": null
+            }
+          }
+        },
+        "headers": {}
+      }
+    },
+    "security": [],
+    "path": "/api/practice/{accessCode}/repair/orders",
+    "method": "GET",
+    "project": "repair",
+    "group": "orders",
+    "source": {
+      "controller": "RepairController",
+      "file": "src/main/java/com/study/vuePractiseBackend/controller/RepairController.java",
+      "line": 315,
+      "requestModel": null,
+      "responseModel": "List<RepairOrder>"
+    }
+  },
+  {
+    "summary": "查询工单详情",
+    "deprecated": false,
+    "description": "权限：有效长期访问码；所属学生、班级、空间启用；请使用本人工作空间。原报修人、ADMIN、当前/历史参与 MAINTAINER\n\n- 返回order及reporterName、maintainerName。允许原报修人、ADMIN、当前或历史参与师傅查看。",
+    "operationId": "RepairController_getOrderDetail",
+    "tags": [
+      "工单管理"
+    ],
+    "parameters": [
+      {
+        "name": "accessCode",
+        "in": "path",
+        "description": "学生长期API访问码；决定workspaceId，客户端不提交workspaceId",
+        "required": true,
+        "example": "{{apiAccessCode}}",
+        "schema": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        }
+      },
+      {
+        "name": "orderId",
+        "in": "path",
+        "description": "工单数据库主键",
+        "required": true,
+        "example": 301,
+        "schema": {
+          "type": "integer",
+          "format": "int64"
+        }
+      },
+      {
+        "name": "operatorId",
+        "in": "query",
+        "description": "当前空间的报修模拟操作人主键，请从本项目用户列表查询",
+        "required": true,
+        "example": 101,
+        "schema": {
+          "type": "integer",
+          "format": "int64"
+        }
+      }
+    ],
+    "responses": {
+      "200": {
+        "description": "操作成功；data类型RepairOrderDetailVO",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": [
+                "code",
+                "message",
+                "data"
+              ],
+              "properties": {
+                "code": {
+                  "type": "integer",
+                  "example": 200
+                },
+                "message": {
+                  "type": "string",
+                  "example": "操作成功"
+                },
+                "data": {
+                  "type": "object",
+                  "properties": {
+                    "order": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "integer",
+                          "format": "int64",
+                          "description": "主键/编号，具体含义见接口说明",
+                          "nullable": true
+                        },
+                        "workspaceId": {
+                          "type": "integer",
+                          "format": "int64",
+                          "description": "服务端解析的空间ID，只返回，客户端不提交",
+                          "nullable": true
+                        },
+                        "orderNo": {
+                          "type": "string",
+                          "description": "后端生成BX开头编号",
+                          "maxLength": 64,
+                          "nullable": true
+                        },
+                        "deviceId": {
+                          "type": "integer",
+                          "format": "int64",
+                          "description": "设备数据库主键；无登记设备可不传",
+                          "nullable": true
+                        },
+                        "deviceName": {
+                          "type": "string",
+                          "description": "设备名称",
+                          "maxLength": 100,
+                          "nullable": true
+                        },
+                        "deviceType": {
+                          "type": "string",
+                          "description": "设备大类名称，普通字符串",
+                          "maxLength": 50,
+                          "nullable": true
+                        },
+                        "location": {
+                          "type": "string",
+                          "description": "设备所在地点（工单保存报修时的位置）",
+                          "maxLength": 200,
+                          "nullable": true
+                        },
+                        "title": {
+                          "type": "string",
+                          "description": "工单标题",
+                          "maxLength": 100,
+                          "nullable": true
+                        },
+                        "description": {
+                          "type": "string",
+                          "description": "故障详细描述，允许后端清洗后的 HTML；必须包含有效文字",
+                          "nullable": true
+                        },
+                        "reporterId": {
+                          "type": "integer",
+                          "format": "int64",
+                          "description": "报修人模拟数据库主键",
+                          "nullable": true
+                        },
+                        "contactPhone": {
+                          "type": "string",
+                          "description": "本次报修电话，不传尝试用户电话",
+                          "maxLength": 20,
+                          "nullable": true
+                        },
+                        "maintainerId": {
+                          "type": "integer",
+                          "format": "int64",
+                          "description": "目标维修师傅数据库主键",
+                          "nullable": true
+                        },
+                        "status": {
+                          "type": "integer",
+                          "format": "int32",
+                          "description": "0：已撤销；1：待分派；2：待接单；3：维修中；4：待确认；5：已完成",
+                          "nullable": true,
+                          "enum": [
+                            0,
+                            1,
+                            2,
+                            3,
+                            4,
+                            5
+                          ]
+                        },
+                        "campus": {
+                          "type": "string",
+                          "description": "新吴校区或藕塘校区",
+                          "maxLength": 50,
+                          "nullable": true,
+                          "enum": [
+                            "新吴校区",
+                            "藕塘校区"
+                          ]
+                        },
+                        "repairResult": {
+                          "type": "string",
+                          "description": "简短维修结果说明，普通文本",
+                          "nullable": true
+                        },
+                        "completedTime": {
+                          "type": "string",
+                          "description": "报修人确认完成的时间，未完成时为空；返回时间格式以实际响应为准",
+                          "nullable": true
+                        },
+                        "cancelTime": {
+                          "type": "string",
+                          "description": "业务字段；返回时间格式以实际响应为准",
+                          "nullable": true
+                        },
+                        "createTime": {
+                          "type": "string",
+                          "description": "创建时间；返回时间格式以实际响应为准",
+                          "nullable": true
+                        },
+                        "updateTime": {
+                          "type": "string",
+                          "description": "更新时间；返回时间格式以实际响应为准",
+                          "nullable": true
+                        }
+                      }
+                    },
+                    "reporterName": {
+                      "type": "string",
+                      "description": "报修人姓名",
+                      "nullable": true
+                    },
+                    "maintainerName": {
+                      "type": "string",
+                      "description": "当前师傅姓名",
+                      "nullable": true
+                    }
+                  }
+                }
+              }
+            },
+            "example": {
+              "code": 200,
+              "message": "操作成功",
+              "data": {
+                "order": {
+                  "id": 1,
+                  "workspaceId": 40,
+                  "orderNo": "BX0123456789abcdef0123456789abcdef",
+                  "deviceId": 201,
+                  "deviceName": "教室空调",
+                  "deviceType": "空调",
+                  "location": "致用楼416教室",
+                  "title": "教室空调制冷异常",
+                  "description": "<p>设备运行后无法正常制冷。</p>",
+                  "reporterId": 102,
+                  "contactPhone": "13800000000",
+                  "maintainerId": null,
+                  "status": 1,
+                  "campus": "新吴校区",
+                  "repairResult": null,
+                  "completedTime": null,
+                  "cancelTime": null,
+                  "createTime": "2026-11-01 09:00:00",
+                  "updateTime": "2026-11-01 10:00:00"
+                },
+                "reporterName": "张老师",
+                "maintainerName": null
+              }
+            }
+          }
+        },
+        "headers": {}
+      },
+      "400": {
+        "description": "缺少/格式错误的参数、字段为空或超长、非法枚举、文件内容不合法等。 具体条件见接口业务规则。",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": [
+                "code",
+                "message",
+                "data"
+              ],
+              "properties": {
+                "code": {
+                  "type": "integer"
+                },
+                "message": {
+                  "type": "string"
+                },
+                "data": {
+                  "type": "object",
+                  "description": "错误时为null",
+                  "properties": {},
+                  "nullable": true
+                }
+              }
+            },
+            "example": {
+              "code": 400,
+              "message": "请求参数不合法",
+              "data": null
+            }
+          }
+        },
+        "headers": {}
+      },
+      "401": {
+        "description": "网页登录Token缺失、无效、过期或撤销；实训路径访问码无效。登录时还可能是账号或密码错误。 具体条件见接口业务规则。",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": [
+                "code",
+                "message",
+                "data"
+              ],
+              "properties": {
+                "code": {
+                  "type": "integer"
+                },
+                "message": {
+                  "type": "string"
+                },
+                "data": {
+                  "type": "object",
+                  "description": "错误时为null",
+                  "properties": {},
+                  "nullable": true
+                }
+              }
+            },
+            "example": {
+              "code": 401,
+              "message": "请先登录或访问码无效",
+              "data": null
+            }
+          }
+        },
+        "headers": {}
+      },
+      "403": {
+        "description": "已识别身份但无此操作权限，或用户/班级/空间停用。跨本人系统资源访问也属于无权限。 具体条件见接口业务规则。",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": [
+                "code",
+                "message",
+                "data"
+              ],
+              "properties": {
+                "code": {
+                  "type": "integer"
+                },
+                "message": {
+                  "type": "string"
+                },
+                "data": {
+                  "type": "object",
+                  "description": "错误时为null",
+                  "properties": {},
+                  "nullable": true
+                }
+              }
+            },
+            "example": {
+              "code": 403,
+              "message": "无权执行该操作",
+              "data": null
+            }
+          }
+        },
+        "headers": {}
+      },
+      "404": {
+        "description": "当前空间内目标或操作人不存在；跨空间ID按照不存在处理。 具体条件见接口业务规则。",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": [
+                "code",
+                "message",
+                "data"
+              ],
+              "properties": {
+                "code": {
+                  "type": "integer"
+                },
+                "message": {
+                  "type": "string"
+                },
+                "data": {
+                  "type": "object",
+                  "description": "错误时为null",
+                  "properties": {},
+                  "nullable": true
+                }
+              }
+            },
+            "example": {
+              "code": 404,
+              "message": "当前空间内目标不存在",
+              "data": null
+            }
+          }
+        },
+        "headers": {}
+      },
+      "405": {
+        "description": "请求方法与接口不匹配。 具体条件见接口业务规则。",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": [
+                "code",
+                "message",
+                "data"
+              ],
+              "properties": {
+                "code": {
+                  "type": "integer"
+                },
+                "message": {
+                  "type": "string"
+                },
+                "data": {
+                  "type": "object",
+                  "description": "错误时为null",
+                  "properties": {},
+                  "nullable": true
+                }
+              }
+            },
+            "example": {
+              "code": 405,
+              "message": "请求方法不受支持",
+              "data": null
+            }
+          }
+        },
+        "headers": {}
+      },
+      "415": {
+        "description": "Content-Type不被当前接口接受。 具体条件见接口业务规则。",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": [
+                "code",
+                "message",
+                "data"
+              ],
+              "properties": {
+                "code": {
+                  "type": "integer"
+                },
+                "message": {
+                  "type": "string"
+                },
+                "data": {
+                  "type": "object",
+                  "description": "错误时为null",
+                  "properties": {},
+                  "nullable": true
+                }
+              }
+            },
+            "example": {
+              "code": 415,
+              "message": "请求Content-Type不受支持",
+              "data": null
+            }
+          }
+        },
+        "headers": {}
+      },
+      "500": {
+        "description": "服务端执行失败；不应作为参数错误的正常处理方式。 具体条件见接口业务规则。",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": [
+                "code",
+                "message",
+                "data"
+              ],
+              "properties": {
+                "code": {
+                  "type": "integer"
+                },
+                "message": {
+                  "type": "string"
+                },
+                "data": {
+                  "type": "object",
+                  "description": "错误时为null",
+                  "properties": {},
+                  "nullable": true
+                }
+              }
+            },
+            "example": {
+              "code": 500,
+              "message": "操作失败，请稍后重试",
+              "data": null
+            }
+          }
+        },
+        "headers": {}
+      }
+    },
+    "security": [],
+    "path": "/api/practice/{accessCode}/repair/orders/{orderId}",
+    "method": "GET",
+    "project": "repair",
+    "group": "orders",
+    "source": {
+      "controller": "RepairController",
+      "file": "src/main/java/com/study/vuePractiseBackend/controller/RepairController.java",
+      "line": 330,
+      "requestModel": null,
+      "responseModel": "RepairOrderDetailVO"
+    }
+  },
+  {
+    "summary": "创建报修工单",
+    "deprecated": false,
+    "description": "权限：有效长期访问码；所属学生、班级、空间启用；请使用本人工作空间。模拟 REPORTER；已有工单仅原报修人\n\n- 仅启用REPORTER可创建，初始status=1待分派，后端生成BX开头编号及CREATE记录。\n- 提供deviceId时，从当前空间启用设备复制名称/类型/校区/地点，忽略客户端这四项覆盖值。\n- 不提供deviceId时，名称/类型/校区/地点必填；设备名称≤100，类型/校区≤50，地点≤200。\n- title必填≤100；description为经后端清洗的HTML；contactPhone选填≤20，不传取用户电话，两者均空则400。\n- imageIds选传最多6个，必须本人上传、当前空间、未绑定、类型1的故障附件。",
+    "operationId": "RepairController_createOrder",
+    "tags": [
+      "工单管理"
+    ],
+    "parameters": [
+      {
+        "name": "accessCode",
+        "in": "path",
+        "description": "学生长期API访问码；决定workspaceId，客户端不提交workspaceId",
+        "required": true,
+        "example": "{{apiAccessCode}}",
+        "schema": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        }
+      }
+    ],
+    "requestBody": {
+      "content": {
+        "application/json": {
+          "schema": {
+            "type": "object",
+            "properties": {
+              "operatorId": {
+                "type": "integer",
+                "format": "int64",
+                "description": "当前空间的报修模拟操作人主键，取自本项目用户列表的 id"
+              },
+              "deviceId": {
+                "type": "integer",
+                "format": "int64",
+                "description": "设备数据库主键；无登记设备可不传；当前空间查询返回的数值ID；不可用学号/模拟编号代替",
+                "nullable": true
+              },
+              "deviceName": {
+                "type": "string",
+                "description": "设备名称；deviceId不传时必填；传deviceId时使用设备快照；deviceId 不传时必填，传入时使用登记设备信息",
+                "maxLength": 100,
+                "nullable": true
+              },
+              "deviceType": {
+                "type": "string",
+                "description": "设备大类名称，普通字符串；deviceId不传时必填；传deviceId时使用设备快照；deviceId 不传时必填，传入时使用登记设备信息",
+                "maxLength": 50,
+                "nullable": true
+              },
+              "campus": {
+                "type": "string",
+                "description": "新吴校区或藕塘校区；deviceId不传时必填；传deviceId时使用设备快照；deviceId 不传时必填，传入时使用登记设备信息",
+                "enum": [
+                  "新吴校区",
+                  "藕塘校区"
+                ],
+                "maxLength": 50,
+                "nullable": true
+              },
+              "location": {
+                "type": "string",
+                "description": "设备所在地点（工单保存报修时的位置）；deviceId 不传时必填，传入时使用登记设备信息",
+                "maxLength": 200,
+                "nullable": true
+              },
+              "title": {
+                "type": "string",
+                "description": "工单标题；≤100字符；其他规则见业务说明",
+                "maxLength": 100
+              },
+              "description": {
+                "type": "string",
+                "description": "故障详细描述，允许后端清洗后的 HTML；必须包含有效文字",
+                "maxLength": 20000
+              },
+              "contactPhone": {
+                "type": "string",
+                "description": "本次报修电话，不传尝试用户电话；≤20字符；其他规则见业务说明",
+                "maxLength": 20,
+                "nullable": true
+              },
+              "imageIds": {
+                "type": "array",
+                "items": {
+                  "type": "integer",
+                  "format": "int64"
+                },
+                "description": "本操作人上传的未绑定附件 id，imageType 必须为 1；最多 6 张",
+                "maxItems": 6,
+                "nullable": true
+              }
+            },
+            "required": [
+              "operatorId",
+              "title",
+              "description"
+            ]
+          },
+          "example": {
+            "operatorId": 102,
+            "deviceId": 201,
+            "deviceName": "教室空调",
+            "deviceType": "空调",
+            "campus": "新吴校区",
+            "location": "致用楼416教室",
+            "title": "教室空调制冷异常",
+            "description": "<p>设备运行后无法正常制冷。</p>",
+            "contactPhone": "13800000000",
+            "imageIds": [
+              501
+            ]
+          }
+        }
+      },
+      "required": true
+    },
+    "responses": {
+      "200": {
+        "description": "操作成功；data类型RepairOrder",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": [
+                "code",
+                "message",
+                "data"
+              ],
+              "properties": {
+                "code": {
+                  "type": "integer",
+                  "example": 200
+                },
+                "message": {
+                  "type": "string",
+                  "example": "操作成功"
+                },
+                "data": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "integer",
+                      "format": "int64",
+                      "description": "主键/编号，具体含义见接口说明",
+                      "nullable": true
+                    },
+                    "workspaceId": {
+                      "type": "integer",
+                      "format": "int64",
+                      "description": "服务端解析的空间ID，只返回，客户端不提交",
+                      "nullable": true
+                    },
+                    "orderNo": {
+                      "type": "string",
+                      "description": "后端生成BX开头编号",
+                      "maxLength": 64,
+                      "nullable": true
+                    },
+                    "deviceId": {
+                      "type": "integer",
+                      "format": "int64",
+                      "description": "设备数据库主键；无登记设备可不传",
+                      "nullable": true
+                    },
+                    "deviceName": {
+                      "type": "string",
+                      "description": "设备名称",
+                      "maxLength": 100,
+                      "nullable": true
+                    },
+                    "deviceType": {
+                      "type": "string",
+                      "description": "设备大类名称，普通字符串",
+                      "maxLength": 50,
+                      "nullable": true
+                    },
+                    "location": {
+                      "type": "string",
+                      "description": "设备所在地点（工单保存报修时的位置）",
+                      "maxLength": 200,
+                      "nullable": true
+                    },
+                    "title": {
+                      "type": "string",
+                      "description": "工单标题",
+                      "maxLength": 100,
+                      "nullable": true
+                    },
+                    "description": {
+                      "type": "string",
+                      "description": "故障详细描述，允许后端清洗后的 HTML；必须包含有效文字",
+                      "nullable": true
+                    },
+                    "reporterId": {
+                      "type": "integer",
+                      "format": "int64",
+                      "description": "报修人模拟数据库主键",
+                      "nullable": true
+                    },
+                    "contactPhone": {
+                      "type": "string",
+                      "description": "本次报修电话，不传尝试用户电话",
+                      "maxLength": 20,
+                      "nullable": true
+                    },
+                    "maintainerId": {
+                      "type": "integer",
+                      "format": "int64",
+                      "description": "目标维修师傅数据库主键",
+                      "nullable": true
+                    },
+                    "status": {
+                      "type": "integer",
+                      "format": "int32",
+                      "description": "0：已撤销；1：待分派；2：待接单；3：维修中；4：待确认；5：已完成",
+                      "nullable": true,
+                      "enum": [
+                        0,
+                        1,
+                        2,
+                        3,
+                        4,
+                        5
+                      ]
+                    },
+                    "campus": {
+                      "type": "string",
+                      "description": "新吴校区或藕塘校区",
+                      "maxLength": 50,
+                      "nullable": true,
+                      "enum": [
+                        "新吴校区",
+                        "藕塘校区"
+                      ]
+                    },
+                    "repairResult": {
+                      "type": "string",
+                      "description": "简短维修结果说明，普通文本",
+                      "nullable": true
+                    },
+                    "completedTime": {
+                      "type": "string",
+                      "description": "报修人确认完成的时间，未完成时为空；返回时间格式以实际响应为准",
+                      "nullable": true
+                    },
+                    "cancelTime": {
+                      "type": "string",
+                      "description": "业务字段；返回时间格式以实际响应为准",
+                      "nullable": true
+                    },
+                    "createTime": {
+                      "type": "string",
+                      "description": "创建时间；返回时间格式以实际响应为准",
+                      "nullable": true
+                    },
+                    "updateTime": {
+                      "type": "string",
+                      "description": "更新时间；返回时间格式以实际响应为准",
+                      "nullable": true
+                    }
+                  }
+                }
+              }
+            },
+            "example": {
+              "code": 200,
+              "message": "操作成功",
+              "data": {
+                "id": 301,
+                "workspaceId": 40,
+                "orderNo": "BX0123456789abcdef0123456789abcdef",
+                "deviceId": 201,
+                "deviceName": "教室空调",
+                "deviceType": "空调",
+                "location": "致用楼416教室",
+                "title": "教室空调制冷异常",
+                "description": "<p>设备运行后无法正常制冷。</p>",
+                "reporterId": 102,
+                "contactPhone": "13800000000",
+                "maintainerId": null,
+                "status": 1,
+                "campus": "新吴校区",
+                "repairResult": null,
+                "completedTime": null,
+                "cancelTime": null,
+                "createTime": "2026-11-01 09:00:00",
+                "updateTime": "2026-11-01 10:00:00"
+              }
+            }
+          }
+        },
+        "headers": {}
+      },
+      "400": {
+        "description": "缺少/格式错误的参数、字段为空或超长、非法枚举、文件内容不合法等。 具体条件见接口业务规则。",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": [
+                "code",
+                "message",
+                "data"
+              ],
+              "properties": {
+                "code": {
+                  "type": "integer"
+                },
+                "message": {
+                  "type": "string"
+                },
+                "data": {
+                  "type": "object",
+                  "description": "错误时为null",
+                  "properties": {},
+                  "nullable": true
+                }
+              }
+            },
+            "example": {
+              "code": 400,
+              "message": "请求参数不合法",
+              "data": null
+            }
+          }
+        },
+        "headers": {}
+      },
+      "401": {
+        "description": "网页登录Token缺失、无效、过期或撤销；实训路径访问码无效。登录时还可能是账号或密码错误。 具体条件见接口业务规则。",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": [
+                "code",
+                "message",
+                "data"
+              ],
+              "properties": {
+                "code": {
+                  "type": "integer"
+                },
+                "message": {
+                  "type": "string"
+                },
+                "data": {
+                  "type": "object",
+                  "description": "错误时为null",
+                  "properties": {},
+                  "nullable": true
+                }
+              }
+            },
+            "example": {
+              "code": 401,
+              "message": "请先登录或访问码无效",
+              "data": null
+            }
+          }
+        },
+        "headers": {}
+      },
+      "403": {
+        "description": "已识别身份但无此操作权限，或用户/班级/空间停用。跨本人系统资源访问也属于无权限。 具体条件见接口业务规则。",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": [
+                "code",
+                "message",
+                "data"
+              ],
+              "properties": {
+                "code": {
+                  "type": "integer"
+                },
+                "message": {
+                  "type": "string"
+                },
+                "data": {
+                  "type": "object",
+                  "description": "错误时为null",
+                  "properties": {},
+                  "nullable": true
+                }
+              }
+            },
+            "example": {
+              "code": 403,
+              "message": "无权执行该操作",
+              "data": null
+            }
+          }
+        },
+        "headers": {}
+      },
+      "404": {
+        "description": "当前空间内目标或操作人不存在；跨空间ID按照不存在处理。 具体条件见接口业务规则。",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": [
+                "code",
+                "message",
+                "data"
+              ],
+              "properties": {
+                "code": {
+                  "type": "integer"
+                },
+                "message": {
+                  "type": "string"
+                },
+                "data": {
+                  "type": "object",
+                  "description": "错误时为null",
+                  "properties": {},
+                  "nullable": true
+                }
+              }
+            },
+            "example": {
+              "code": 404,
+              "message": "当前空间内目标不存在",
+              "data": null
+            }
+          }
+        },
+        "headers": {}
+      },
+      "405": {
+        "description": "请求方法与接口不匹配。 具体条件见接口业务规则。",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": [
+                "code",
+                "message",
+                "data"
+              ],
+              "properties": {
+                "code": {
+                  "type": "integer"
+                },
+                "message": {
+                  "type": "string"
+                },
+                "data": {
+                  "type": "object",
+                  "description": "错误时为null",
+                  "properties": {},
+                  "nullable": true
+                }
+              }
+            },
+            "example": {
+              "code": 405,
+              "message": "请求方法不受支持",
+              "data": null
+            }
+          }
+        },
+        "headers": {}
+      },
+      "409": {
+        "description": "当前状态不允许操作、重复业务、名额耗尽或存在业务引用等。 具体条件见接口业务规则。",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": [
+                "code",
+                "message",
+                "data"
+              ],
+              "properties": {
+                "code": {
+                  "type": "integer"
+                },
+                "message": {
+                  "type": "string"
+                },
+                "data": {
+                  "type": "object",
+                  "description": "错误时为null",
+                  "properties": {},
+                  "nullable": true
+                }
+              }
+            },
+            "example": {
+              "code": 409,
+              "message": "当前状态不允许该操作",
+              "data": null
+            }
+          }
+        },
+        "headers": {}
+      },
+      "415": {
+        "description": "Content-Type不被当前接口接受。 具体条件见接口业务规则。",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": [
+                "code",
+                "message",
+                "data"
+              ],
+              "properties": {
+                "code": {
+                  "type": "integer"
+                },
+                "message": {
+                  "type": "string"
+                },
+                "data": {
+                  "type": "object",
+                  "description": "错误时为null",
+                  "properties": {},
+                  "nullable": true
+                }
+              }
+            },
+            "example": {
+              "code": 415,
+              "message": "请求Content-Type不受支持",
+              "data": null
+            }
+          }
+        },
+        "headers": {}
+      },
+      "500": {
+        "description": "服务端执行失败；不应作为参数错误的正常处理方式。 具体条件见接口业务规则。",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": [
+                "code",
+                "message",
+                "data"
+              ],
+              "properties": {
+                "code": {
+                  "type": "integer"
+                },
+                "message": {
+                  "type": "string"
+                },
+                "data": {
+                  "type": "object",
+                  "description": "错误时为null",
+                  "properties": {},
+                  "nullable": true
+                }
+              }
+            },
+            "example": {
+              "code": 500,
+              "message": "操作失败，请稍后重试",
+              "data": null
+            }
+          }
+        },
+        "headers": {}
+      }
+    },
+    "security": [],
+    "path": "/api/practice/{accessCode}/repair/orders",
+    "method": "POST",
+    "project": "repair",
+    "group": "orders",
+    "source": {
+      "controller": "RepairController",
+      "file": "src/main/java/com/study/vuePractiseBackend/controller/RepairController.java",
+      "line": 339,
+      "requestModel": "RepairOrderCreateDTO",
+      "responseModel": "RepairOrder"
+    }
+  },
+  {
+    "summary": "撤回工单",
+    "deprecated": false,
+    "description": "权限：有效长期访问码；所属学生、班级、空间启用；请使用本人工作空间。模拟 REPORTER；已有工单仅原报修人\n\n- 仅原报修人可以撤回状态1或2：变为0并写CANCEL记录。\n- 保留工单、当前师傅、图片及历史；已为0重复撤回直接返回。",
+    "operationId": "RepairController_cancelOrder",
+    "tags": [
+      "工单管理"
+    ],
+    "parameters": [
+      {
+        "name": "accessCode",
+        "in": "path",
+        "description": "学生长期API访问码；决定workspaceId，客户端不提交workspaceId",
+        "required": true,
+        "example": "{{apiAccessCode}}",
+        "schema": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        }
+      },
+      {
+        "name": "orderId",
+        "in": "path",
+        "description": "工单数据库主键",
+        "required": true,
+        "example": 301,
+        "schema": {
+          "type": "integer",
+          "format": "int64"
+        }
+      },
+      {
+        "name": "operatorId",
+        "in": "query",
+        "description": "当前空间的报修模拟操作人主键，请从本项目用户列表查询",
+        "required": true,
+        "example": 102,
+        "schema": {
+          "type": "integer",
+          "format": "int64"
+        }
+      }
+    ],
+    "responses": {
+      "200": {
+        "description": "操作成功；data类型RepairOrder",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": [
+                "code",
+                "message",
+                "data"
+              ],
+              "properties": {
+                "code": {
+                  "type": "integer",
+                  "example": 200
+                },
+                "message": {
+                  "type": "string",
+                  "example": "操作成功"
+                },
+                "data": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "integer",
+                      "format": "int64",
+                      "description": "主键/编号，具体含义见接口说明",
+                      "nullable": true
+                    },
+                    "workspaceId": {
+                      "type": "integer",
+                      "format": "int64",
+                      "description": "服务端解析的空间ID，只返回，客户端不提交",
+                      "nullable": true
+                    },
+                    "orderNo": {
+                      "type": "string",
+                      "description": "后端生成BX开头编号",
+                      "maxLength": 64,
+                      "nullable": true
+                    },
+                    "deviceId": {
+                      "type": "integer",
+                      "format": "int64",
+                      "description": "设备数据库主键；无登记设备可不传",
+                      "nullable": true
+                    },
+                    "deviceName": {
+                      "type": "string",
+                      "description": "设备名称",
+                      "maxLength": 100,
+                      "nullable": true
+                    },
+                    "deviceType": {
+                      "type": "string",
+                      "description": "设备大类名称，普通字符串",
+                      "maxLength": 50,
+                      "nullable": true
+                    },
+                    "location": {
+                      "type": "string",
+                      "description": "设备所在地点（工单保存报修时的位置）",
+                      "maxLength": 200,
+                      "nullable": true
+                    },
+                    "title": {
+                      "type": "string",
+                      "description": "工单标题",
+                      "maxLength": 100,
+                      "nullable": true
+                    },
+                    "description": {
+                      "type": "string",
+                      "description": "故障详细描述，允许后端清洗后的 HTML；必须包含有效文字",
+                      "nullable": true
+                    },
+                    "reporterId": {
+                      "type": "integer",
+                      "format": "int64",
+                      "description": "报修人模拟数据库主键",
+                      "nullable": true
+                    },
+                    "contactPhone": {
+                      "type": "string",
+                      "description": "本次报修电话，不传尝试用户电话",
+                      "maxLength": 20,
+                      "nullable": true
+                    },
+                    "maintainerId": {
+                      "type": "integer",
+                      "format": "int64",
+                      "description": "目标维修师傅数据库主键",
+                      "nullable": true
+                    },
+                    "status": {
+                      "type": "integer",
+                      "format": "int32",
+                      "description": "0：已撤销；1：待分派；2：待接单；3：维修中；4：待确认；5：已完成",
+                      "nullable": true,
+                      "enum": [
+                        0,
+                        1,
+                        2,
+                        3,
+                        4,
+                        5
+                      ]
+                    },
+                    "campus": {
+                      "type": "string",
+                      "description": "新吴校区或藕塘校区",
+                      "maxLength": 50,
+                      "nullable": true,
+                      "enum": [
+                        "新吴校区",
+                        "藕塘校区"
+                      ]
+                    },
+                    "repairResult": {
+                      "type": "string",
+                      "description": "简短维修结果说明，普通文本",
+                      "nullable": true
+                    },
+                    "completedTime": {
+                      "type": "string",
+                      "description": "报修人确认完成的时间，未完成时为空；返回时间格式以实际响应为准",
+                      "nullable": true
+                    },
+                    "cancelTime": {
+                      "type": "string",
+                      "description": "业务字段；返回时间格式以实际响应为准",
+                      "nullable": true
+                    },
+                    "createTime": {
+                      "type": "string",
+                      "description": "创建时间；返回时间格式以实际响应为准",
+                      "nullable": true
+                    },
+                    "updateTime": {
+                      "type": "string",
+                      "description": "更新时间；返回时间格式以实际响应为准",
+                      "nullable": true
+                    }
+                  }
+                }
+              }
+            },
+            "example": {
+              "code": 200,
+              "message": "操作成功",
+              "data": {
+                "id": 301,
+                "workspaceId": 40,
+                "orderNo": "BX0123456789abcdef0123456789abcdef",
+                "deviceId": 201,
+                "deviceName": "教室空调",
+                "deviceType": "空调",
+                "location": "致用楼416教室",
+                "title": "教室空调制冷异常",
+                "description": "<p>设备运行后无法正常制冷。</p>",
+                "reporterId": 102,
+                "contactPhone": "13800000000",
+                "maintainerId": null,
+                "status": 0,
+                "campus": "新吴校区",
+                "repairResult": null,
+                "completedTime": null,
+                "cancelTime": "2026-11-01 09:30:00",
+                "createTime": "2026-11-01 09:00:00",
+                "updateTime": "2026-11-01 09:30:00"
+              }
+            }
+          }
+        },
+        "headers": {}
+      },
+      "400": {
+        "description": "缺少/格式错误的参数、字段为空或超长、非法枚举、文件内容不合法等。 具体条件见接口业务规则。",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": [
+                "code",
+                "message",
+                "data"
+              ],
+              "properties": {
+                "code": {
+                  "type": "integer"
+                },
+                "message": {
+                  "type": "string"
+                },
+                "data": {
+                  "type": "object",
+                  "description": "错误时为null",
+                  "properties": {},
+                  "nullable": true
+                }
+              }
+            },
+            "example": {
+              "code": 400,
+              "message": "请求参数不合法",
+              "data": null
+            }
+          }
+        },
+        "headers": {}
+      },
+      "401": {
+        "description": "网页登录Token缺失、无效、过期或撤销；实训路径访问码无效。登录时还可能是账号或密码错误。 具体条件见接口业务规则。",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": [
+                "code",
+                "message",
+                "data"
+              ],
+              "properties": {
+                "code": {
+                  "type": "integer"
+                },
+                "message": {
+                  "type": "string"
+                },
+                "data": {
+                  "type": "object",
+                  "description": "错误时为null",
+                  "properties": {},
+                  "nullable": true
+                }
+              }
+            },
+            "example": {
+              "code": 401,
+              "message": "请先登录或访问码无效",
+              "data": null
+            }
+          }
+        },
+        "headers": {}
+      },
+      "403": {
+        "description": "已识别身份但无此操作权限，或用户/班级/空间停用。跨本人系统资源访问也属于无权限。 具体条件见接口业务规则。",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": [
+                "code",
+                "message",
+                "data"
+              ],
+              "properties": {
+                "code": {
+                  "type": "integer"
+                },
+                "message": {
+                  "type": "string"
+                },
+                "data": {
+                  "type": "object",
+                  "description": "错误时为null",
+                  "properties": {},
+                  "nullable": true
+                }
+              }
+            },
+            "example": {
+              "code": 403,
+              "message": "无权执行该操作",
+              "data": null
+            }
+          }
+        },
+        "headers": {}
+      },
+      "404": {
+        "description": "当前空间内目标或操作人不存在；跨空间ID按照不存在处理。 具体条件见接口业务规则。",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": [
+                "code",
+                "message",
+                "data"
+              ],
+              "properties": {
+                "code": {
+                  "type": "integer"
+                },
+                "message": {
+                  "type": "string"
+                },
+                "data": {
+                  "type": "object",
+                  "description": "错误时为null",
+                  "properties": {},
+                  "nullable": true
+                }
+              }
+            },
+            "example": {
+              "code": 404,
+              "message": "当前空间内目标不存在",
+              "data": null
+            }
+          }
+        },
+        "headers": {}
+      },
+      "405": {
+        "description": "请求方法与接口不匹配。 具体条件见接口业务规则。",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": [
+                "code",
+                "message",
+                "data"
+              ],
+              "properties": {
+                "code": {
+                  "type": "integer"
+                },
+                "message": {
+                  "type": "string"
+                },
+                "data": {
+                  "type": "object",
+                  "description": "错误时为null",
+                  "properties": {},
+                  "nullable": true
+                }
+              }
+            },
+            "example": {
+              "code": 405,
+              "message": "请求方法不受支持",
+              "data": null
+            }
+          }
+        },
+        "headers": {}
+      },
+      "409": {
+        "description": "当前状态不允许操作、重复业务、名额耗尽或存在业务引用等。 具体条件见接口业务规则。",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": [
+                "code",
+                "message",
+                "data"
+              ],
+              "properties": {
+                "code": {
+                  "type": "integer"
+                },
+                "message": {
+                  "type": "string"
+                },
+                "data": {
+                  "type": "object",
+                  "description": "错误时为null",
+                  "properties": {},
+                  "nullable": true
+                }
+              }
+            },
+            "example": {
+              "code": 409,
+              "message": "当前状态不允许该操作",
+              "data": null
+            }
+          }
+        },
+        "headers": {}
+      },
+      "415": {
+        "description": "Content-Type不被当前接口接受。 具体条件见接口业务规则。",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": [
+                "code",
+                "message",
+                "data"
+              ],
+              "properties": {
+                "code": {
+                  "type": "integer"
+                },
+                "message": {
+                  "type": "string"
+                },
+                "data": {
+                  "type": "object",
+                  "description": "错误时为null",
+                  "properties": {},
+                  "nullable": true
+                }
+              }
+            },
+            "example": {
+              "code": 415,
+              "message": "请求Content-Type不受支持",
+              "data": null
+            }
+          }
+        },
+        "headers": {}
+      },
+      "500": {
+        "description": "服务端执行失败；不应作为参数错误的正常处理方式。 具体条件见接口业务规则。",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": [
+                "code",
+                "message",
+                "data"
+              ],
+              "properties": {
+                "code": {
+                  "type": "integer"
+                },
+                "message": {
+                  "type": "string"
+                },
+                "data": {
+                  "type": "object",
+                  "description": "错误时为null",
+                  "properties": {},
+                  "nullable": true
+                }
+              }
+            },
+            "example": {
+              "code": 500,
+              "message": "操作失败，请稍后重试",
+              "data": null
+            }
+          }
+        },
+        "headers": {}
+      }
+    },
+    "security": [],
+    "path": "/api/practice/{accessCode}/repair/orders/{orderId}/cancel",
+    "method": "PUT",
+    "project": "repair",
+    "group": "orders",
+    "source": {
+      "controller": "RepairController",
+      "file": "src/main/java/com/study/vuePractiseBackend/controller/RepairController.java",
+      "line": 347,
+      "requestModel": null,
+      "responseModel": "RepairOrder"
+    }
+  },
+  {
+    "summary": "管理员派单或改派",
+    "deprecated": false,
+    "description": "权限：有效长期访问码；所属学生、班级、空间启用；请使用本人工作空间。模拟 ADMIN\n\n- 仅ADMIN；可给状态1派单，或给状态2重新派单；目标必须是当前空间启用师傅。\n- 同师傅重复派单不追加记录；改派到不同师傅追加ASSIGN并保存targetUserId。\n- 已接单后不支持管理员改派；content选填≤2000。",
+    "operationId": "RepairController_assignOrder",
+    "tags": [
+      "工单管理"
+    ],
+    "parameters": [
+      {
+        "name": "accessCode",
+        "in": "path",
+        "description": "学生长期API访问码；决定workspaceId，客户端不提交workspaceId",
+        "required": true,
+        "example": "{{apiAccessCode}}",
+        "schema": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        }
+      },
+      {
+        "name": "orderId",
+        "in": "path",
+        "description": "工单数据库主键",
+        "required": true,
+        "example": 301,
+        "schema": {
+          "type": "integer",
+          "format": "int64"
+        }
+      }
+    ],
+    "requestBody": {
+      "content": {
+        "application/json": {
+          "schema": {
+            "type": "object",
+            "properties": {
+              "operatorId": {
+                "type": "integer",
+                "format": "int64",
+                "description": "当前空间的报修模拟操作人主键，取自本项目用户列表的 id"
+              },
+              "maintainerId": {
+                "type": "integer",
+                "format": "int64",
+                "description": "目标维修师傅数据库主键；当前空间查询返回的数值ID；不可用学号/模拟编号代替"
+              },
+              "content": {
+                "type": "string",
+                "description": "派单说明，选填",
+                "maxLength": 2000,
+                "nullable": true
+              }
+            },
+            "required": [
+              "operatorId",
+              "maintainerId"
+            ]
+          },
+          "example": {
+            "operatorId": 101,
+            "maintainerId": 103,
+            "content": "请检修空调制冷故障。"
+          }
+        }
+      },
+      "required": true
+    },
+    "responses": {
+      "200": {
+        "description": "操作成功；data类型RepairOrder",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": [
+                "code",
+                "message",
+                "data"
+              ],
+              "properties": {
+                "code": {
+                  "type": "integer",
+                  "example": 200
+                },
+                "message": {
+                  "type": "string",
+                  "example": "操作成功"
+                },
+                "data": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "integer",
+                      "format": "int64",
+                      "description": "主键/编号，具体含义见接口说明",
+                      "nullable": true
+                    },
+                    "workspaceId": {
+                      "type": "integer",
+                      "format": "int64",
+                      "description": "服务端解析的空间ID，只返回，客户端不提交",
+                      "nullable": true
+                    },
+                    "orderNo": {
+                      "type": "string",
+                      "description": "后端生成BX开头编号",
+                      "maxLength": 64,
+                      "nullable": true
+                    },
+                    "deviceId": {
+                      "type": "integer",
+                      "format": "int64",
+                      "description": "设备数据库主键；无登记设备可不传",
+                      "nullable": true
+                    },
+                    "deviceName": {
+                      "type": "string",
+                      "description": "设备名称",
+                      "maxLength": 100,
+                      "nullable": true
+                    },
+                    "deviceType": {
+                      "type": "string",
+                      "description": "设备大类名称，普通字符串",
+                      "maxLength": 50,
+                      "nullable": true
+                    },
+                    "location": {
+                      "type": "string",
+                      "description": "设备所在地点（工单保存报修时的位置）",
+                      "maxLength": 200,
+                      "nullable": true
+                    },
+                    "title": {
+                      "type": "string",
+                      "description": "工单标题",
+                      "maxLength": 100,
+                      "nullable": true
+                    },
+                    "description": {
+                      "type": "string",
+                      "description": "故障详细描述，允许后端清洗后的 HTML；必须包含有效文字",
+                      "nullable": true
+                    },
+                    "reporterId": {
+                      "type": "integer",
+                      "format": "int64",
+                      "description": "报修人模拟数据库主键",
+                      "nullable": true
+                    },
+                    "contactPhone": {
+                      "type": "string",
+                      "description": "本次报修电话，不传尝试用户电话",
+                      "maxLength": 20,
+                      "nullable": true
+                    },
+                    "maintainerId": {
+                      "type": "integer",
+                      "format": "int64",
+                      "description": "目标维修师傅数据库主键",
+                      "nullable": true
+                    },
+                    "status": {
+                      "type": "integer",
+                      "format": "int32",
+                      "description": "0：已撤销；1：待分派；2：待接单；3：维修中；4：待确认；5：已完成",
+                      "nullable": true,
+                      "enum": [
+                        0,
+                        1,
+                        2,
+                        3,
+                        4,
+                        5
+                      ]
+                    },
+                    "campus": {
+                      "type": "string",
+                      "description": "新吴校区或藕塘校区",
+                      "maxLength": 50,
+                      "nullable": true,
+                      "enum": [
+                        "新吴校区",
+                        "藕塘校区"
+                      ]
+                    },
+                    "repairResult": {
+                      "type": "string",
+                      "description": "简短维修结果说明，普通文本",
+                      "nullable": true
+                    },
+                    "completedTime": {
+                      "type": "string",
+                      "description": "报修人确认完成的时间，未完成时为空；返回时间格式以实际响应为准",
+                      "nullable": true
+                    },
+                    "cancelTime": {
+                      "type": "string",
+                      "description": "业务字段；返回时间格式以实际响应为准",
+                      "nullable": true
+                    },
+                    "createTime": {
+                      "type": "string",
+                      "description": "创建时间；返回时间格式以实际响应为准",
+                      "nullable": true
+                    },
+                    "updateTime": {
+                      "type": "string",
+                      "description": "更新时间；返回时间格式以实际响应为准",
+                      "nullable": true
+                    }
+                  }
+                }
+              }
+            },
+            "example": {
+              "code": 200,
+              "message": "操作成功",
+              "data": {
+                "id": 301,
+                "workspaceId": 40,
+                "orderNo": "BX0123456789abcdef0123456789abcdef",
+                "deviceId": 201,
+                "deviceName": "教室空调",
+                "deviceType": "空调",
+                "location": "致用楼416教室",
+                "title": "教室空调制冷异常",
+                "description": "<p>设备运行后无法正常制冷。</p>",
+                "reporterId": 102,
+                "contactPhone": "13800000000",
+                "maintainerId": 103,
+                "status": 2,
+                "campus": "新吴校区",
+                "repairResult": null,
+                "completedTime": null,
+                "cancelTime": null,
+                "createTime": "2026-11-01 09:00:00",
+                "updateTime": "2026-11-01 10:00:00"
+              }
+            }
+          }
+        },
+        "headers": {}
+      },
+      "400": {
+        "description": "缺少/格式错误的参数、字段为空或超长、非法枚举、文件内容不合法等。 具体条件见接口业务规则。",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": [
+                "code",
+                "message",
+                "data"
+              ],
+              "properties": {
+                "code": {
+                  "type": "integer"
+                },
+                "message": {
+                  "type": "string"
+                },
+                "data": {
+                  "type": "object",
+                  "description": "错误时为null",
+                  "properties": {},
+                  "nullable": true
+                }
+              }
+            },
+            "example": {
+              "code": 400,
+              "message": "请求参数不合法",
+              "data": null
+            }
+          }
+        },
+        "headers": {}
+      },
+      "401": {
+        "description": "网页登录Token缺失、无效、过期或撤销；实训路径访问码无效。登录时还可能是账号或密码错误。 具体条件见接口业务规则。",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": [
+                "code",
+                "message",
+                "data"
+              ],
+              "properties": {
+                "code": {
+                  "type": "integer"
+                },
+                "message": {
+                  "type": "string"
+                },
+                "data": {
+                  "type": "object",
+                  "description": "错误时为null",
+                  "properties": {},
+                  "nullable": true
+                }
+              }
+            },
+            "example": {
+              "code": 401,
+              "message": "请先登录或访问码无效",
+              "data": null
+            }
+          }
+        },
+        "headers": {}
+      },
+      "403": {
+        "description": "已识别身份但无此操作权限，或用户/班级/空间停用。跨本人系统资源访问也属于无权限。 具体条件见接口业务规则。",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": [
+                "code",
+                "message",
+                "data"
+              ],
+              "properties": {
+                "code": {
+                  "type": "integer"
+                },
+                "message": {
+                  "type": "string"
+                },
+                "data": {
+                  "type": "object",
+                  "description": "错误时为null",
+                  "properties": {},
+                  "nullable": true
+                }
+              }
+            },
+            "example": {
+              "code": 403,
+              "message": "无权执行该操作",
+              "data": null
+            }
+          }
+        },
+        "headers": {}
+      },
+      "404": {
+        "description": "当前空间内目标或操作人不存在；跨空间ID按照不存在处理。 具体条件见接口业务规则。",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": [
+                "code",
+                "message",
+                "data"
+              ],
+              "properties": {
+                "code": {
+                  "type": "integer"
+                },
+                "message": {
+                  "type": "string"
+                },
+                "data": {
+                  "type": "object",
+                  "description": "错误时为null",
+                  "properties": {},
+                  "nullable": true
+                }
+              }
+            },
+            "example": {
+              "code": 404,
+              "message": "当前空间内目标不存在",
+              "data": null
+            }
+          }
+        },
+        "headers": {}
+      },
+      "405": {
+        "description": "请求方法与接口不匹配。 具体条件见接口业务规则。",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": [
+                "code",
+                "message",
+                "data"
+              ],
+              "properties": {
+                "code": {
+                  "type": "integer"
+                },
+                "message": {
+                  "type": "string"
+                },
+                "data": {
+                  "type": "object",
+                  "description": "错误时为null",
+                  "properties": {},
+                  "nullable": true
+                }
+              }
+            },
+            "example": {
+              "code": 405,
+              "message": "请求方法不受支持",
+              "data": null
+            }
+          }
+        },
+        "headers": {}
+      },
+      "409": {
+        "description": "当前状态不允许操作、重复业务、名额耗尽或存在业务引用等。 具体条件见接口业务规则。",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": [
+                "code",
+                "message",
+                "data"
+              ],
+              "properties": {
+                "code": {
+                  "type": "integer"
+                },
+                "message": {
+                  "type": "string"
+                },
+                "data": {
+                  "type": "object",
+                  "description": "错误时为null",
+                  "properties": {},
+                  "nullable": true
+                }
+              }
+            },
+            "example": {
+              "code": 409,
+              "message": "当前状态不允许该操作",
+              "data": null
+            }
+          }
+        },
+        "headers": {}
+      },
+      "415": {
+        "description": "Content-Type不被当前接口接受。 具体条件见接口业务规则。",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": [
+                "code",
+                "message",
+                "data"
+              ],
+              "properties": {
+                "code": {
+                  "type": "integer"
+                },
+                "message": {
+                  "type": "string"
+                },
+                "data": {
+                  "type": "object",
+                  "description": "错误时为null",
+                  "properties": {},
+                  "nullable": true
+                }
+              }
+            },
+            "example": {
+              "code": 415,
+              "message": "请求Content-Type不受支持",
+              "data": null
+            }
+          }
+        },
+        "headers": {}
+      },
+      "500": {
+        "description": "服务端执行失败；不应作为参数错误的正常处理方式。 具体条件见接口业务规则。",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": [
+                "code",
+                "message",
+                "data"
+              ],
+              "properties": {
+                "code": {
+                  "type": "integer"
+                },
+                "message": {
+                  "type": "string"
+                },
+                "data": {
+                  "type": "object",
+                  "description": "错误时为null",
+                  "properties": {},
+                  "nullable": true
+                }
+              }
+            },
+            "example": {
+              "code": 500,
+              "message": "操作失败，请稍后重试",
+              "data": null
+            }
+          }
+        },
+        "headers": {}
+      }
+    },
+    "security": [],
+    "path": "/api/practice/{accessCode}/repair/orders/{orderId}/assign",
+    "method": "PUT",
+    "project": "repair",
+    "group": "orders",
+    "source": {
+      "controller": "RepairController",
+      "file": "src/main/java/com/study/vuePractiseBackend/controller/RepairController.java",
+      "line": 356,
+      "requestModel": "RepairAssignDTO",
+      "responseModel": "RepairOrder"
+    }
+  },
+  {
+    "summary": "维修师傅接单",
+    "deprecated": false,
+    "description": "权限：有效长期访问码；所属学生、班级、空间启用；请使用本人工作空间。当前被派单的 MAINTAINER\n\n- 仅当前分派师傅；2→3，写ACCEPT记录；状态3重复接单直接返回。",
+    "operationId": "RepairController_acceptOrder",
+    "tags": [
+      "工单管理"
+    ],
+    "parameters": [
+      {
+        "name": "accessCode",
+        "in": "path",
+        "description": "学生长期API访问码；决定workspaceId，客户端不提交workspaceId",
+        "required": true,
+        "example": "{{apiAccessCode}}",
+        "schema": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        }
+      },
+      {
+        "name": "orderId",
+        "in": "path",
+        "description": "工单数据库主键",
+        "required": true,
+        "example": 301,
+        "schema": {
+          "type": "integer",
+          "format": "int64"
+        }
+      },
+      {
+        "name": "operatorId",
+        "in": "query",
+        "description": "当前空间的报修模拟操作人主键，请从本项目用户列表查询",
+        "required": true,
+        "example": 103,
+        "schema": {
+          "type": "integer",
+          "format": "int64"
+        }
+      }
+    ],
+    "responses": {
+      "200": {
+        "description": "操作成功；data类型RepairOrder",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": [
+                "code",
+                "message",
+                "data"
+              ],
+              "properties": {
+                "code": {
+                  "type": "integer",
+                  "example": 200
+                },
+                "message": {
+                  "type": "string",
+                  "example": "操作成功"
+                },
+                "data": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "integer",
+                      "format": "int64",
+                      "description": "主键/编号，具体含义见接口说明",
+                      "nullable": true
+                    },
+                    "workspaceId": {
+                      "type": "integer",
+                      "format": "int64",
+                      "description": "服务端解析的空间ID，只返回，客户端不提交",
+                      "nullable": true
+                    },
+                    "orderNo": {
+                      "type": "string",
+                      "description": "后端生成BX开头编号",
+                      "maxLength": 64,
+                      "nullable": true
+                    },
+                    "deviceId": {
+                      "type": "integer",
+                      "format": "int64",
+                      "description": "设备数据库主键；无登记设备可不传",
+                      "nullable": true
+                    },
+                    "deviceName": {
+                      "type": "string",
+                      "description": "设备名称",
+                      "maxLength": 100,
+                      "nullable": true
+                    },
+                    "deviceType": {
+                      "type": "string",
+                      "description": "设备大类名称，普通字符串",
+                      "maxLength": 50,
+                      "nullable": true
+                    },
+                    "location": {
+                      "type": "string",
+                      "description": "设备所在地点（工单保存报修时的位置）",
+                      "maxLength": 200,
+                      "nullable": true
+                    },
+                    "title": {
+                      "type": "string",
+                      "description": "工单标题",
+                      "maxLength": 100,
+                      "nullable": true
+                    },
+                    "description": {
+                      "type": "string",
+                      "description": "故障详细描述，允许后端清洗后的 HTML；必须包含有效文字",
+                      "nullable": true
+                    },
+                    "reporterId": {
+                      "type": "integer",
+                      "format": "int64",
+                      "description": "报修人模拟数据库主键",
+                      "nullable": true
+                    },
+                    "contactPhone": {
+                      "type": "string",
+                      "description": "本次报修电话，不传尝试用户电话",
+                      "maxLength": 20,
+                      "nullable": true
+                    },
+                    "maintainerId": {
+                      "type": "integer",
+                      "format": "int64",
+                      "description": "目标维修师傅数据库主键",
+                      "nullable": true
+                    },
+                    "status": {
+                      "type": "integer",
+                      "format": "int32",
+                      "description": "0：已撤销；1：待分派；2：待接单；3：维修中；4：待确认；5：已完成",
+                      "nullable": true,
+                      "enum": [
+                        0,
+                        1,
+                        2,
+                        3,
+                        4,
+                        5
+                      ]
+                    },
+                    "campus": {
+                      "type": "string",
+                      "description": "新吴校区或藕塘校区",
+                      "maxLength": 50,
+                      "nullable": true,
+                      "enum": [
+                        "新吴校区",
+                        "藕塘校区"
+                      ]
+                    },
+                    "repairResult": {
+                      "type": "string",
+                      "description": "简短维修结果说明，普通文本",
+                      "nullable": true
+                    },
+                    "completedTime": {
+                      "type": "string",
+                      "description": "报修人确认完成的时间，未完成时为空；返回时间格式以实际响应为准",
+                      "nullable": true
+                    },
+                    "cancelTime": {
+                      "type": "string",
+                      "description": "业务字段；返回时间格式以实际响应为准",
+                      "nullable": true
+                    },
+                    "createTime": {
+                      "type": "string",
+                      "description": "创建时间；返回时间格式以实际响应为准",
+                      "nullable": true
+                    },
+                    "updateTime": {
+                      "type": "string",
+                      "description": "更新时间；返回时间格式以实际响应为准",
+                      "nullable": true
+                    }
+                  }
+                }
+              }
+            },
+            "example": {
+              "code": 200,
+              "message": "操作成功",
+              "data": {
+                "id": 301,
+                "workspaceId": 40,
+                "orderNo": "BX0123456789abcdef0123456789abcdef",
+                "deviceId": 201,
+                "deviceName": "教室空调",
+                "deviceType": "空调",
+                "location": "致用楼416教室",
+                "title": "教室空调制冷异常",
+                "description": "<p>设备运行后无法正常制冷。</p>",
+                "reporterId": 102,
+                "contactPhone": "13800000000",
+                "maintainerId": 103,
+                "status": 3,
+                "campus": "新吴校区",
+                "repairResult": null,
+                "completedTime": null,
+                "cancelTime": null,
+                "createTime": "2026-11-01 09:00:00",
+                "updateTime": "2026-11-01 10:00:00"
+              }
+            }
+          }
+        },
+        "headers": {}
+      },
+      "400": {
+        "description": "缺少/格式错误的参数、字段为空或超长、非法枚举、文件内容不合法等。 具体条件见接口业务规则。",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": [
+                "code",
+                "message",
+                "data"
+              ],
+              "properties": {
+                "code": {
+                  "type": "integer"
+                },
+                "message": {
+                  "type": "string"
+                },
+                "data": {
+                  "type": "object",
+                  "description": "错误时为null",
+                  "properties": {},
+                  "nullable": true
+                }
+              }
+            },
+            "example": {
+              "code": 400,
+              "message": "请求参数不合法",
+              "data": null
+            }
+          }
+        },
+        "headers": {}
+      },
+      "401": {
+        "description": "网页登录Token缺失、无效、过期或撤销；实训路径访问码无效。登录时还可能是账号或密码错误。 具体条件见接口业务规则。",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": [
+                "code",
+                "message",
+                "data"
+              ],
+              "properties": {
+                "code": {
+                  "type": "integer"
+                },
+                "message": {
+                  "type": "string"
+                },
+                "data": {
+                  "type": "object",
+                  "description": "错误时为null",
+                  "properties": {},
+                  "nullable": true
+                }
+              }
+            },
+            "example": {
+              "code": 401,
+              "message": "请先登录或访问码无效",
+              "data": null
+            }
+          }
+        },
+        "headers": {}
+      },
+      "403": {
+        "description": "已识别身份但无此操作权限，或用户/班级/空间停用。跨本人系统资源访问也属于无权限。 具体条件见接口业务规则。",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": [
+                "code",
+                "message",
+                "data"
+              ],
+              "properties": {
+                "code": {
+                  "type": "integer"
+                },
+                "message": {
+                  "type": "string"
+                },
+                "data": {
+                  "type": "object",
+                  "description": "错误时为null",
+                  "properties": {},
+                  "nullable": true
+                }
+              }
+            },
+            "example": {
+              "code": 403,
+              "message": "无权执行该操作",
+              "data": null
+            }
+          }
+        },
+        "headers": {}
+      },
+      "404": {
+        "description": "当前空间内目标或操作人不存在；跨空间ID按照不存在处理。 具体条件见接口业务规则。",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": [
+                "code",
+                "message",
+                "data"
+              ],
+              "properties": {
+                "code": {
+                  "type": "integer"
+                },
+                "message": {
+                  "type": "string"
+                },
+                "data": {
+                  "type": "object",
+                  "description": "错误时为null",
+                  "properties": {},
+                  "nullable": true
+                }
+              }
+            },
+            "example": {
+              "code": 404,
+              "message": "当前空间内目标不存在",
+              "data": null
+            }
+          }
+        },
+        "headers": {}
+      },
+      "405": {
+        "description": "请求方法与接口不匹配。 具体条件见接口业务规则。",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": [
+                "code",
+                "message",
+                "data"
+              ],
+              "properties": {
+                "code": {
+                  "type": "integer"
+                },
+                "message": {
+                  "type": "string"
+                },
+                "data": {
+                  "type": "object",
+                  "description": "错误时为null",
+                  "properties": {},
+                  "nullable": true
+                }
+              }
+            },
+            "example": {
+              "code": 405,
+              "message": "请求方法不受支持",
+              "data": null
+            }
+          }
+        },
+        "headers": {}
+      },
+      "409": {
+        "description": "当前状态不允许操作、重复业务、名额耗尽或存在业务引用等。 具体条件见接口业务规则。",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": [
+                "code",
+                "message",
+                "data"
+              ],
+              "properties": {
+                "code": {
+                  "type": "integer"
+                },
+                "message": {
+                  "type": "string"
+                },
+                "data": {
+                  "type": "object",
+                  "description": "错误时为null",
+                  "properties": {},
+                  "nullable": true
+                }
+              }
+            },
+            "example": {
+              "code": 409,
+              "message": "当前状态不允许该操作",
+              "data": null
+            }
+          }
+        },
+        "headers": {}
+      },
+      "415": {
+        "description": "Content-Type不被当前接口接受。 具体条件见接口业务规则。",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": [
+                "code",
+                "message",
+                "data"
+              ],
+              "properties": {
+                "code": {
+                  "type": "integer"
+                },
+                "message": {
+                  "type": "string"
+                },
+                "data": {
+                  "type": "object",
+                  "description": "错误时为null",
+                  "properties": {},
+                  "nullable": true
+                }
+              }
+            },
+            "example": {
+              "code": 415,
+              "message": "请求Content-Type不受支持",
+              "data": null
+            }
+          }
+        },
+        "headers": {}
+      },
+      "500": {
+        "description": "服务端执行失败；不应作为参数错误的正常处理方式。 具体条件见接口业务规则。",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": [
+                "code",
+                "message",
+                "data"
+              ],
+              "properties": {
+                "code": {
+                  "type": "integer"
+                },
+                "message": {
+                  "type": "string"
+                },
+                "data": {
+                  "type": "object",
+                  "description": "错误时为null",
+                  "properties": {},
+                  "nullable": true
+                }
+              }
+            },
+            "example": {
+              "code": 500,
+              "message": "操作失败，请稍后重试",
+              "data": null
+            }
+          }
+        },
+        "headers": {}
+      }
+    },
+    "security": [],
+    "path": "/api/practice/{accessCode}/repair/orders/{orderId}/accept",
+    "method": "PUT",
+    "project": "repair",
+    "group": "orders",
+    "source": {
+      "controller": "RepairController",
+      "file": "src/main/java/com/study/vuePractiseBackend/controller/RepairController.java",
+      "line": 365,
+      "requestModel": null,
+      "responseModel": "RepairOrder"
+    }
+  },
+  {
+    "summary": "提交维修结果",
+    "deprecated": false,
+    "description": "权限：有效长期访问码；所属学生、班级、空间启用；请使用本人工作空间。当前被派单的 MAINTAINER\n\n- 仅当前师傅；repairResult必填≤2000，必须1～6张本人未绑定类型2图片。\n- 3→4待确认，图片关联本次SUBMIT；completedTime在报修人确认完成时填写。\n- 状态4重复提交返回原工单，不修改说明或重复绑定图片；过程记录已绑定图片不能再次提交。",
+    "operationId": "RepairController_submitOrder",
+    "tags": [
+      "工单管理"
+    ],
+    "parameters": [
+      {
+        "name": "accessCode",
+        "in": "path",
+        "description": "学生长期API访问码；决定workspaceId，客户端不提交workspaceId",
+        "required": true,
+        "example": "{{apiAccessCode}}",
+        "schema": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        }
+      },
+      {
+        "name": "orderId",
+        "in": "path",
+        "description": "工单数据库主键",
+        "required": true,
+        "example": 301,
+        "schema": {
+          "type": "integer",
+          "format": "int64"
+        }
+      }
+    ],
+    "requestBody": {
+      "content": {
+        "application/json": {
+          "schema": {
+            "type": "object",
+            "properties": {
+              "operatorId": {
+                "type": "integer",
+                "format": "int64",
+                "description": "当前空间的报修模拟操作人主键，取自本项目用户列表的 id"
+              },
+              "repairResult": {
+                "type": "string",
+                "description": "简短维修结果说明，普通文本；必填普通文本，≤2000字符",
+                "maxLength": 2000
+              },
+              "imageIds": {
+                "type": "array",
+                "items": {
+                  "type": "integer",
+                  "format": "int64"
+                },
+                "description": "本操作人上传的未绑定附件 id，imageType 必须为 2；最多 6 张",
+                "maxItems": 6,
+                "minItems": 1
+              }
+            },
+            "required": [
+              "operatorId",
+              "repairResult",
+              "imageIds"
+            ]
+          },
+          "example": {
+            "operatorId": 103,
+            "repairResult": "已更换电容，试运行恢复正常",
+            "imageIds": [
+              502
+            ]
+          }
+        }
+      },
+      "required": true
+    },
+    "responses": {
+      "200": {
+        "description": "操作成功；data类型RepairOrder",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": [
+                "code",
+                "message",
+                "data"
+              ],
+              "properties": {
+                "code": {
+                  "type": "integer",
+                  "example": 200
+                },
+                "message": {
+                  "type": "string",
+                  "example": "操作成功"
+                },
+                "data": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "integer",
+                      "format": "int64",
+                      "description": "主键/编号，具体含义见接口说明",
+                      "nullable": true
+                    },
+                    "workspaceId": {
+                      "type": "integer",
+                      "format": "int64",
+                      "description": "服务端解析的空间ID，只返回，客户端不提交",
+                      "nullable": true
+                    },
+                    "orderNo": {
+                      "type": "string",
+                      "description": "后端生成BX开头编号",
+                      "maxLength": 64,
+                      "nullable": true
+                    },
+                    "deviceId": {
+                      "type": "integer",
+                      "format": "int64",
+                      "description": "设备数据库主键；无登记设备可不传",
+                      "nullable": true
+                    },
+                    "deviceName": {
+                      "type": "string",
+                      "description": "设备名称",
+                      "maxLength": 100,
+                      "nullable": true
+                    },
+                    "deviceType": {
+                      "type": "string",
+                      "description": "设备大类名称，普通字符串",
+                      "maxLength": 50,
+                      "nullable": true
+                    },
+                    "location": {
+                      "type": "string",
+                      "description": "设备所在地点（工单保存报修时的位置）",
+                      "maxLength": 200,
+                      "nullable": true
+                    },
+                    "title": {
+                      "type": "string",
+                      "description": "工单标题",
+                      "maxLength": 100,
+                      "nullable": true
+                    },
+                    "description": {
+                      "type": "string",
+                      "description": "故障详细描述，允许后端清洗后的 HTML；必须包含有效文字",
+                      "nullable": true
+                    },
+                    "reporterId": {
+                      "type": "integer",
+                      "format": "int64",
+                      "description": "报修人模拟数据库主键",
+                      "nullable": true
+                    },
+                    "contactPhone": {
+                      "type": "string",
+                      "description": "本次报修电话，不传尝试用户电话",
+                      "maxLength": 20,
+                      "nullable": true
+                    },
+                    "maintainerId": {
+                      "type": "integer",
+                      "format": "int64",
+                      "description": "目标维修师傅数据库主键",
+                      "nullable": true
+                    },
+                    "status": {
+                      "type": "integer",
+                      "format": "int32",
+                      "description": "0：已撤销；1：待分派；2：待接单；3：维修中；4：待确认；5：已完成",
+                      "nullable": true,
+                      "enum": [
+                        0,
+                        1,
+                        2,
+                        3,
+                        4,
+                        5
+                      ]
+                    },
+                    "campus": {
+                      "type": "string",
+                      "description": "新吴校区或藕塘校区",
+                      "maxLength": 50,
+                      "nullable": true,
+                      "enum": [
+                        "新吴校区",
+                        "藕塘校区"
+                      ]
+                    },
+                    "repairResult": {
+                      "type": "string",
+                      "description": "简短维修结果说明，普通文本",
+                      "nullable": true
+                    },
+                    "completedTime": {
+                      "type": "string",
+                      "description": "报修人确认完成的时间，未完成时为空；返回时间格式以实际响应为准",
+                      "nullable": true
+                    },
+                    "cancelTime": {
+                      "type": "string",
+                      "description": "业务字段；返回时间格式以实际响应为准",
+                      "nullable": true
+                    },
+                    "createTime": {
+                      "type": "string",
+                      "description": "创建时间；返回时间格式以实际响应为准",
+                      "nullable": true
+                    },
+                    "updateTime": {
+                      "type": "string",
+                      "description": "更新时间；返回时间格式以实际响应为准",
+                      "nullable": true
+                    }
+                  }
+                }
+              }
+            },
+            "example": {
+              "code": 200,
+              "message": "操作成功",
+              "data": {
+                "id": 301,
+                "workspaceId": 40,
+                "orderNo": "BX0123456789abcdef0123456789abcdef",
+                "deviceId": 201,
+                "deviceName": "教室空调",
+                "deviceType": "空调",
+                "location": "致用楼416教室",
+                "title": "教室空调制冷异常",
+                "description": "<p>设备运行后无法正常制冷。</p>",
+                "reporterId": 102,
+                "contactPhone": "13800000000",
+                "maintainerId": 103,
+                "status": 4,
+                "campus": "新吴校区",
+                "repairResult": "已更换电容，试运行恢复正常",
+                "completedTime": null,
+                "cancelTime": null,
+                "createTime": "2026-11-01 09:00:00",
+                "updateTime": "2026-11-01 10:00:00"
+              }
+            }
+          }
+        },
+        "headers": {}
+      },
+      "400": {
+        "description": "缺少/格式错误的参数、字段为空或超长、非法枚举、文件内容不合法等。 具体条件见接口业务规则。",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": [
+                "code",
+                "message",
+                "data"
+              ],
+              "properties": {
+                "code": {
+                  "type": "integer"
+                },
+                "message": {
+                  "type": "string"
+                },
+                "data": {
+                  "type": "object",
+                  "description": "错误时为null",
+                  "properties": {},
+                  "nullable": true
+                }
+              }
+            },
+            "example": {
+              "code": 400,
+              "message": "请求参数不合法",
+              "data": null
+            }
+          }
+        },
+        "headers": {}
+      },
+      "401": {
+        "description": "网页登录Token缺失、无效、过期或撤销；实训路径访问码无效。登录时还可能是账号或密码错误。 具体条件见接口业务规则。",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": [
+                "code",
+                "message",
+                "data"
+              ],
+              "properties": {
+                "code": {
+                  "type": "integer"
+                },
+                "message": {
+                  "type": "string"
+                },
+                "data": {
+                  "type": "object",
+                  "description": "错误时为null",
+                  "properties": {},
+                  "nullable": true
+                }
+              }
+            },
+            "example": {
+              "code": 401,
+              "message": "请先登录或访问码无效",
+              "data": null
+            }
+          }
+        },
+        "headers": {}
+      },
+      "403": {
+        "description": "已识别身份但无此操作权限，或用户/班级/空间停用。跨本人系统资源访问也属于无权限。 具体条件见接口业务规则。",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": [
+                "code",
+                "message",
+                "data"
+              ],
+              "properties": {
+                "code": {
+                  "type": "integer"
+                },
+                "message": {
+                  "type": "string"
+                },
+                "data": {
+                  "type": "object",
+                  "description": "错误时为null",
+                  "properties": {},
+                  "nullable": true
+                }
+              }
+            },
+            "example": {
+              "code": 403,
+              "message": "无权执行该操作",
+              "data": null
+            }
+          }
+        },
+        "headers": {}
+      },
+      "404": {
+        "description": "当前空间内目标或操作人不存在；跨空间ID按照不存在处理。 具体条件见接口业务规则。",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": [
+                "code",
+                "message",
+                "data"
+              ],
+              "properties": {
+                "code": {
+                  "type": "integer"
+                },
+                "message": {
+                  "type": "string"
+                },
+                "data": {
+                  "type": "object",
+                  "description": "错误时为null",
+                  "properties": {},
+                  "nullable": true
+                }
+              }
+            },
+            "example": {
+              "code": 404,
+              "message": "当前空间内目标不存在",
+              "data": null
+            }
+          }
+        },
+        "headers": {}
+      },
+      "405": {
+        "description": "请求方法与接口不匹配。 具体条件见接口业务规则。",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": [
+                "code",
+                "message",
+                "data"
+              ],
+              "properties": {
+                "code": {
+                  "type": "integer"
+                },
+                "message": {
+                  "type": "string"
+                },
+                "data": {
+                  "type": "object",
+                  "description": "错误时为null",
+                  "properties": {},
+                  "nullable": true
+                }
+              }
+            },
+            "example": {
+              "code": 405,
+              "message": "请求方法不受支持",
+              "data": null
+            }
+          }
+        },
+        "headers": {}
+      },
+      "409": {
+        "description": "当前状态不允许操作、重复业务、名额耗尽或存在业务引用等。 具体条件见接口业务规则。",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": [
+                "code",
+                "message",
+                "data"
+              ],
+              "properties": {
+                "code": {
+                  "type": "integer"
+                },
+                "message": {
+                  "type": "string"
+                },
+                "data": {
+                  "type": "object",
+                  "description": "错误时为null",
+                  "properties": {},
+                  "nullable": true
+                }
+              }
+            },
+            "example": {
+              "code": 409,
+              "message": "当前状态不允许该操作",
+              "data": null
+            }
+          }
+        },
+        "headers": {}
+      },
+      "415": {
+        "description": "Content-Type不被当前接口接受。 具体条件见接口业务规则。",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": [
+                "code",
+                "message",
+                "data"
+              ],
+              "properties": {
+                "code": {
+                  "type": "integer"
+                },
+                "message": {
+                  "type": "string"
+                },
+                "data": {
+                  "type": "object",
+                  "description": "错误时为null",
+                  "properties": {},
+                  "nullable": true
+                }
+              }
+            },
+            "example": {
+              "code": 415,
+              "message": "请求Content-Type不受支持",
+              "data": null
+            }
+          }
+        },
+        "headers": {}
+      },
+      "500": {
+        "description": "服务端执行失败；不应作为参数错误的正常处理方式。 具体条件见接口业务规则。",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": [
+                "code",
+                "message",
+                "data"
+              ],
+              "properties": {
+                "code": {
+                  "type": "integer"
+                },
+                "message": {
+                  "type": "string"
+                },
+                "data": {
+                  "type": "object",
+                  "description": "错误时为null",
+                  "properties": {},
+                  "nullable": true
+                }
+              }
+            },
+            "example": {
+              "code": 500,
+              "message": "操作失败，请稍后重试",
+              "data": null
+            }
+          }
+        },
+        "headers": {}
+      }
+    },
+    "security": [],
+    "path": "/api/practice/{accessCode}/repair/orders/{orderId}/submit",
+    "method": "PUT",
+    "project": "repair",
+    "group": "orders",
+    "source": {
+      "controller": "RepairController",
+      "file": "src/main/java/com/study/vuePractiseBackend/controller/RepairController.java",
+      "line": 383,
+      "requestModel": "RepairSubmitDTO",
+      "responseModel": "RepairOrder"
+    }
+  },
+  {
+    "summary": "报修人确认完成",
+    "deprecated": false,
+    "description": "权限：有效长期访问码；所属学生、班级、空间启用；请使用本人工作空间。模拟 REPORTER；已有工单仅原报修人\n\n- 仅原报修人可操作待确认工单：4→5，写入completedTime和CONFIRM记录。\n- 状态已为5时重复确认返回原工单，不追加记录。",
+    "operationId": "RepairController_confirmOrder",
+    "tags": [
+      "工单管理"
+    ],
+    "parameters": [
+      {
+        "name": "accessCode",
+        "in": "path",
+        "description": "学生长期API访问码；决定workspaceId，客户端不提交workspaceId",
+        "required": true,
+        "example": "{{apiAccessCode}}",
+        "schema": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        }
+      },
+      {
+        "name": "orderId",
+        "in": "path",
+        "description": "工单数据库主键",
+        "required": true,
+        "example": 301,
+        "schema": {
+          "type": "integer",
+          "format": "int64"
+        }
+      },
+      {
+        "name": "operatorId",
+        "in": "query",
+        "description": "当前空间的报修模拟操作人主键，请从本项目用户列表查询",
+        "required": true,
+        "example": 102,
+        "schema": {
+          "type": "integer",
+          "format": "int64"
+        }
+      }
+    ],
+    "responses": {
+      "200": {
+        "description": "操作成功；data类型RepairOrder",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": [
+                "code",
+                "message",
+                "data"
+              ],
+              "properties": {
+                "code": {
+                  "type": "integer",
+                  "example": 200
+                },
+                "message": {
+                  "type": "string",
+                  "example": "操作成功"
+                },
+                "data": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "integer",
+                      "format": "int64",
+                      "description": "主键/编号，具体含义见接口说明",
+                      "nullable": true
+                    },
+                    "workspaceId": {
+                      "type": "integer",
+                      "format": "int64",
+                      "description": "服务端解析的空间ID，只返回，客户端不提交",
+                      "nullable": true
+                    },
+                    "orderNo": {
+                      "type": "string",
+                      "description": "后端生成BX开头编号",
+                      "maxLength": 64,
+                      "nullable": true
+                    },
+                    "deviceId": {
+                      "type": "integer",
+                      "format": "int64",
+                      "description": "设备数据库主键；无登记设备可不传",
+                      "nullable": true
+                    },
+                    "deviceName": {
+                      "type": "string",
+                      "description": "设备名称",
+                      "maxLength": 100,
+                      "nullable": true
+                    },
+                    "deviceType": {
+                      "type": "string",
+                      "description": "设备大类名称，普通字符串",
+                      "maxLength": 50,
+                      "nullable": true
+                    },
+                    "location": {
+                      "type": "string",
+                      "description": "设备所在地点（工单保存报修时的位置）",
+                      "maxLength": 200,
+                      "nullable": true
+                    },
+                    "title": {
+                      "type": "string",
+                      "description": "工单标题",
+                      "maxLength": 100,
+                      "nullable": true
+                    },
+                    "description": {
+                      "type": "string",
+                      "description": "故障详细描述，允许后端清洗后的 HTML；必须包含有效文字",
+                      "nullable": true
+                    },
+                    "reporterId": {
+                      "type": "integer",
+                      "format": "int64",
+                      "description": "报修人模拟数据库主键",
+                      "nullable": true
+                    },
+                    "contactPhone": {
+                      "type": "string",
+                      "description": "本次报修电话，不传尝试用户电话",
+                      "maxLength": 20,
+                      "nullable": true
+                    },
+                    "maintainerId": {
+                      "type": "integer",
+                      "format": "int64",
+                      "description": "目标维修师傅数据库主键",
+                      "nullable": true
+                    },
+                    "status": {
+                      "type": "integer",
+                      "format": "int32",
+                      "description": "0：已撤销；1：待分派；2：待接单；3：维修中；4：待确认；5：已完成",
+                      "nullable": true,
+                      "enum": [
+                        0,
+                        1,
+                        2,
+                        3,
+                        4,
+                        5
+                      ]
+                    },
+                    "campus": {
+                      "type": "string",
+                      "description": "新吴校区或藕塘校区",
+                      "maxLength": 50,
+                      "nullable": true,
+                      "enum": [
+                        "新吴校区",
+                        "藕塘校区"
+                      ]
+                    },
+                    "repairResult": {
+                      "type": "string",
+                      "description": "简短维修结果说明，普通文本",
+                      "nullable": true
+                    },
+                    "completedTime": {
+                      "type": "string",
+                      "description": "报修人确认完成的时间，未完成时为空；返回时间格式以实际响应为准",
+                      "nullable": true
+                    },
+                    "cancelTime": {
+                      "type": "string",
+                      "description": "业务字段；返回时间格式以实际响应为准",
+                      "nullable": true
+                    },
+                    "createTime": {
+                      "type": "string",
+                      "description": "创建时间；返回时间格式以实际响应为准",
+                      "nullable": true
+                    },
+                    "updateTime": {
+                      "type": "string",
+                      "description": "更新时间；返回时间格式以实际响应为准",
+                      "nullable": true
+                    }
+                  }
+                }
+              }
+            },
+            "example": {
+              "code": 200,
+              "message": "操作成功",
+              "data": {
+                "id": 301,
+                "workspaceId": 40,
+                "orderNo": "BX0123456789abcdef0123456789abcdef",
+                "deviceId": 201,
+                "deviceName": "教室空调",
+                "deviceType": "空调",
+                "location": "致用楼416教室",
+                "title": "教室空调制冷异常",
+                "description": "<p>设备运行后无法正常制冷。</p>",
+                "reporterId": 102,
+                "contactPhone": "13800000000",
+                "maintainerId": 103,
+                "status": 5,
+                "campus": "新吴校区",
+                "repairResult": "已更换电容，试运行恢复正常",
+                "completedTime": "2026-11-01 12:00:00",
+                "cancelTime": null,
+                "createTime": "2026-11-01 09:00:00",
+                "updateTime": "2026-11-01 12:00:00"
+              }
+            }
+          }
+        },
+        "headers": {}
+      },
+      "400": {
+        "description": "缺少/格式错误的参数、字段为空或超长、非法枚举、文件内容不合法等。 具体条件见接口业务规则。",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": [
+                "code",
+                "message",
+                "data"
+              ],
+              "properties": {
+                "code": {
+                  "type": "integer"
+                },
+                "message": {
+                  "type": "string"
+                },
+                "data": {
+                  "type": "object",
+                  "description": "错误时为null",
+                  "properties": {},
+                  "nullable": true
+                }
+              }
+            },
+            "example": {
+              "code": 400,
+              "message": "请求参数不合法",
+              "data": null
+            }
+          }
+        },
+        "headers": {}
+      },
+      "401": {
+        "description": "网页登录Token缺失、无效、过期或撤销；实训路径访问码无效。登录时还可能是账号或密码错误。 具体条件见接口业务规则。",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": [
+                "code",
+                "message",
+                "data"
+              ],
+              "properties": {
+                "code": {
+                  "type": "integer"
+                },
+                "message": {
+                  "type": "string"
+                },
+                "data": {
+                  "type": "object",
+                  "description": "错误时为null",
+                  "properties": {},
+                  "nullable": true
+                }
+              }
+            },
+            "example": {
+              "code": 401,
+              "message": "请先登录或访问码无效",
+              "data": null
+            }
+          }
+        },
+        "headers": {}
+      },
+      "403": {
+        "description": "已识别身份但无此操作权限，或用户/班级/空间停用。跨本人系统资源访问也属于无权限。 具体条件见接口业务规则。",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": [
+                "code",
+                "message",
+                "data"
+              ],
+              "properties": {
+                "code": {
+                  "type": "integer"
+                },
+                "message": {
+                  "type": "string"
+                },
+                "data": {
+                  "type": "object",
+                  "description": "错误时为null",
+                  "properties": {},
+                  "nullable": true
+                }
+              }
+            },
+            "example": {
+              "code": 403,
+              "message": "无权执行该操作",
+              "data": null
+            }
+          }
+        },
+        "headers": {}
+      },
+      "404": {
+        "description": "当前空间内目标或操作人不存在；跨空间ID按照不存在处理。 具体条件见接口业务规则。",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": [
+                "code",
+                "message",
+                "data"
+              ],
+              "properties": {
+                "code": {
+                  "type": "integer"
+                },
+                "message": {
+                  "type": "string"
+                },
+                "data": {
+                  "type": "object",
+                  "description": "错误时为null",
+                  "properties": {},
+                  "nullable": true
+                }
+              }
+            },
+            "example": {
+              "code": 404,
+              "message": "当前空间内目标不存在",
+              "data": null
+            }
+          }
+        },
+        "headers": {}
+      },
+      "405": {
+        "description": "请求方法与接口不匹配。 具体条件见接口业务规则。",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": [
+                "code",
+                "message",
+                "data"
+              ],
+              "properties": {
+                "code": {
+                  "type": "integer"
+                },
+                "message": {
+                  "type": "string"
+                },
+                "data": {
+                  "type": "object",
+                  "description": "错误时为null",
+                  "properties": {},
+                  "nullable": true
+                }
+              }
+            },
+            "example": {
+              "code": 405,
+              "message": "请求方法不受支持",
+              "data": null
+            }
+          }
+        },
+        "headers": {}
+      },
+      "409": {
+        "description": "当前状态不允许操作、重复业务、名额耗尽或存在业务引用等。 具体条件见接口业务规则。",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": [
+                "code",
+                "message",
+                "data"
+              ],
+              "properties": {
+                "code": {
+                  "type": "integer"
+                },
+                "message": {
+                  "type": "string"
+                },
+                "data": {
+                  "type": "object",
+                  "description": "错误时为null",
+                  "properties": {},
+                  "nullable": true
+                }
+              }
+            },
+            "example": {
+              "code": 409,
+              "message": "当前状态不允许该操作",
+              "data": null
+            }
+          }
+        },
+        "headers": {}
+      },
+      "415": {
+        "description": "Content-Type不被当前接口接受。 具体条件见接口业务规则。",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": [
+                "code",
+                "message",
+                "data"
+              ],
+              "properties": {
+                "code": {
+                  "type": "integer"
+                },
+                "message": {
+                  "type": "string"
+                },
+                "data": {
+                  "type": "object",
+                  "description": "错误时为null",
+                  "properties": {},
+                  "nullable": true
+                }
+              }
+            },
+            "example": {
+              "code": 415,
+              "message": "请求Content-Type不受支持",
+              "data": null
+            }
+          }
+        },
+        "headers": {}
+      },
+      "500": {
+        "description": "服务端执行失败；不应作为参数错误的正常处理方式。 具体条件见接口业务规则。",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": [
+                "code",
+                "message",
+                "data"
+              ],
+              "properties": {
+                "code": {
+                  "type": "integer"
+                },
+                "message": {
+                  "type": "string"
+                },
+                "data": {
+                  "type": "object",
+                  "description": "错误时为null",
+                  "properties": {},
+                  "nullable": true
+                }
+              }
+            },
+            "example": {
+              "code": 500,
+              "message": "操作失败，请稍后重试",
+              "data": null
+            }
+          }
+        },
+        "headers": {}
+      }
+    },
+    "security": [],
+    "path": "/api/practice/{accessCode}/repair/orders/{orderId}/confirm",
+    "method": "PUT",
+    "project": "repair",
+    "group": "orders",
+    "source": {
+      "controller": "RepairController",
+      "file": "src/main/java/com/study/vuePractiseBackend/controller/RepairController.java",
+      "line": 49,
+      "requestModel": null,
+      "responseModel": "RepairOrder"
+    }
+  },
+  {
+    "summary": "报修人退回维修",
+    "deprecated": false,
+    "description": "权限：有效长期访问码；所属学生、班级、空间启用；请使用本人工作空间。模拟 REPORTER；已有工单仅原报修人\n\n- 仅原报修人可退回待确认工单：4→3；退回原因必填，最多2000字符。\n- 保留当前师傅、既有维修结果、图片和处理记录；重新提交要上传新的维修图片。",
+    "operationId": "RepairController_returnOrder",
+    "tags": [
+      "工单管理"
+    ],
+    "parameters": [
+      {
+        "name": "accessCode",
+        "in": "path",
+        "description": "学生长期API访问码；决定workspaceId，客户端不提交workspaceId",
+        "required": true,
+        "example": "{{apiAccessCode}}",
+        "schema": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        }
+      },
+      {
+        "name": "orderId",
+        "in": "path",
+        "description": "工单数据库主键",
+        "required": true,
+        "example": 301,
+        "schema": {
+          "type": "integer",
+          "format": "int64"
+        }
+      }
+    ],
+    "requestBody": {
+      "content": {
+        "application/json": {
+          "schema": {
+            "type": "object",
+            "properties": {
+              "operatorId": {
+                "type": "integer",
+                "format": "int64",
+                "description": "当前空间的报修模拟操作人主键，取自本项目用户列表的 id"
+              },
+              "content": {
+                "type": "string",
+                "description": "退回原因",
+                "maxLength": 2000
+              }
+            },
+            "required": [
+              "operatorId",
+              "content"
+            ]
+          },
+          "example": {
+            "operatorId": 102,
+            "content": "试运行后仍不制冷，请继续检修。"
+          }
+        }
+      },
+      "required": true
+    },
+    "responses": {
+      "200": {
+        "description": "操作成功；data类型RepairOrder",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": [
+                "code",
+                "message",
+                "data"
+              ],
+              "properties": {
+                "code": {
+                  "type": "integer",
+                  "example": 200
+                },
+                "message": {
+                  "type": "string",
+                  "example": "操作成功"
+                },
+                "data": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "integer",
+                      "format": "int64",
+                      "description": "主键/编号，具体含义见接口说明",
+                      "nullable": true
+                    },
+                    "workspaceId": {
+                      "type": "integer",
+                      "format": "int64",
+                      "description": "服务端解析的空间ID，只返回，客户端不提交",
+                      "nullable": true
+                    },
+                    "orderNo": {
+                      "type": "string",
+                      "description": "后端生成BX开头编号",
+                      "maxLength": 64,
+                      "nullable": true
+                    },
+                    "deviceId": {
+                      "type": "integer",
+                      "format": "int64",
+                      "description": "设备数据库主键；无登记设备可不传",
+                      "nullable": true
+                    },
+                    "deviceName": {
+                      "type": "string",
+                      "description": "设备名称",
+                      "maxLength": 100,
+                      "nullable": true
+                    },
+                    "deviceType": {
+                      "type": "string",
+                      "description": "设备大类名称，普通字符串",
+                      "maxLength": 50,
+                      "nullable": true
+                    },
+                    "location": {
+                      "type": "string",
+                      "description": "设备所在地点（工单保存报修时的位置）",
+                      "maxLength": 200,
+                      "nullable": true
+                    },
+                    "title": {
+                      "type": "string",
+                      "description": "工单标题",
+                      "maxLength": 100,
+                      "nullable": true
+                    },
+                    "description": {
+                      "type": "string",
+                      "description": "故障详细描述，允许后端清洗后的 HTML；必须包含有效文字",
+                      "nullable": true
+                    },
+                    "reporterId": {
+                      "type": "integer",
+                      "format": "int64",
+                      "description": "报修人模拟数据库主键",
+                      "nullable": true
+                    },
+                    "contactPhone": {
+                      "type": "string",
+                      "description": "本次报修电话，不传尝试用户电话",
+                      "maxLength": 20,
+                      "nullable": true
+                    },
+                    "maintainerId": {
+                      "type": "integer",
+                      "format": "int64",
+                      "description": "目标维修师傅数据库主键",
+                      "nullable": true
+                    },
+                    "status": {
+                      "type": "integer",
+                      "format": "int32",
+                      "description": "0：已撤销；1：待分派；2：待接单；3：维修中；4：待确认；5：已完成",
+                      "nullable": true,
+                      "enum": [
+                        0,
+                        1,
+                        2,
+                        3,
+                        4,
+                        5
+                      ]
+                    },
+                    "campus": {
+                      "type": "string",
+                      "description": "新吴校区或藕塘校区",
+                      "maxLength": 50,
+                      "nullable": true,
+                      "enum": [
+                        "新吴校区",
+                        "藕塘校区"
+                      ]
+                    },
+                    "repairResult": {
+                      "type": "string",
+                      "description": "简短维修结果说明，普通文本",
+                      "nullable": true
+                    },
+                    "completedTime": {
+                      "type": "string",
+                      "description": "报修人确认完成的时间，未完成时为空；返回时间格式以实际响应为准",
+                      "nullable": true
+                    },
+                    "cancelTime": {
+                      "type": "string",
+                      "description": "业务字段；返回时间格式以实际响应为准",
+                      "nullable": true
+                    },
+                    "createTime": {
+                      "type": "string",
+                      "description": "创建时间；返回时间格式以实际响应为准",
+                      "nullable": true
+                    },
+                    "updateTime": {
+                      "type": "string",
+                      "description": "更新时间；返回时间格式以实际响应为准",
+                      "nullable": true
+                    }
+                  }
+                }
+              }
+            },
+            "example": {
+              "code": 200,
+              "message": "操作成功",
+              "data": {
+                "id": 301,
+                "workspaceId": 40,
+                "orderNo": "BX0123456789abcdef0123456789abcdef",
+                "deviceId": 201,
+                "deviceName": "教室空调",
+                "deviceType": "空调",
+                "location": "致用楼416教室",
+                "title": "教室空调制冷异常",
+                "description": "<p>设备运行后无法正常制冷。</p>",
+                "reporterId": 102,
+                "contactPhone": "13800000000",
+                "maintainerId": 103,
+                "status": 3,
+                "campus": "新吴校区",
+                "repairResult": "已更换电容，试运行恢复正常",
+                "completedTime": null,
+                "cancelTime": null,
+                "createTime": "2026-11-01 09:00:00",
+                "updateTime": "2026-11-01 10:00:00"
+              }
+            }
+          }
+        },
+        "headers": {}
+      },
+      "400": {
+        "description": "缺少/格式错误的参数、字段为空或超长、非法枚举、文件内容不合法等。 具体条件见接口业务规则。",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": [
+                "code",
+                "message",
+                "data"
+              ],
+              "properties": {
+                "code": {
+                  "type": "integer"
+                },
+                "message": {
+                  "type": "string"
+                },
+                "data": {
+                  "type": "object",
+                  "description": "错误时为null",
+                  "properties": {},
+                  "nullable": true
+                }
+              }
+            },
+            "example": {
+              "code": 400,
+              "message": "请求参数不合法",
+              "data": null
+            }
+          }
+        },
+        "headers": {}
+      },
+      "401": {
+        "description": "网页登录Token缺失、无效、过期或撤销；实训路径访问码无效。登录时还可能是账号或密码错误。 具体条件见接口业务规则。",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": [
+                "code",
+                "message",
+                "data"
+              ],
+              "properties": {
+                "code": {
+                  "type": "integer"
+                },
+                "message": {
+                  "type": "string"
+                },
+                "data": {
+                  "type": "object",
+                  "description": "错误时为null",
+                  "properties": {},
+                  "nullable": true
+                }
+              }
+            },
+            "example": {
+              "code": 401,
+              "message": "请先登录或访问码无效",
+              "data": null
+            }
+          }
+        },
+        "headers": {}
+      },
+      "403": {
+        "description": "已识别身份但无此操作权限，或用户/班级/空间停用。跨本人系统资源访问也属于无权限。 具体条件见接口业务规则。",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": [
+                "code",
+                "message",
+                "data"
+              ],
+              "properties": {
+                "code": {
+                  "type": "integer"
+                },
+                "message": {
+                  "type": "string"
+                },
+                "data": {
+                  "type": "object",
+                  "description": "错误时为null",
+                  "properties": {},
+                  "nullable": true
+                }
+              }
+            },
+            "example": {
+              "code": 403,
+              "message": "无权执行该操作",
+              "data": null
+            }
+          }
+        },
+        "headers": {}
+      },
+      "404": {
+        "description": "当前空间内目标或操作人不存在；跨空间ID按照不存在处理。 具体条件见接口业务规则。",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": [
+                "code",
+                "message",
+                "data"
+              ],
+              "properties": {
+                "code": {
+                  "type": "integer"
+                },
+                "message": {
+                  "type": "string"
+                },
+                "data": {
+                  "type": "object",
+                  "description": "错误时为null",
+                  "properties": {},
+                  "nullable": true
+                }
+              }
+            },
+            "example": {
+              "code": 404,
+              "message": "当前空间内目标不存在",
+              "data": null
+            }
+          }
+        },
+        "headers": {}
+      },
+      "405": {
+        "description": "请求方法与接口不匹配。 具体条件见接口业务规则。",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": [
+                "code",
+                "message",
+                "data"
+              ],
+              "properties": {
+                "code": {
+                  "type": "integer"
+                },
+                "message": {
+                  "type": "string"
+                },
+                "data": {
+                  "type": "object",
+                  "description": "错误时为null",
+                  "properties": {},
+                  "nullable": true
+                }
+              }
+            },
+            "example": {
+              "code": 405,
+              "message": "请求方法不受支持",
+              "data": null
+            }
+          }
+        },
+        "headers": {}
+      },
+      "409": {
+        "description": "当前状态不允许操作、重复业务、名额耗尽或存在业务引用等。 具体条件见接口业务规则。",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": [
+                "code",
+                "message",
+                "data"
+              ],
+              "properties": {
+                "code": {
+                  "type": "integer"
+                },
+                "message": {
+                  "type": "string"
+                },
+                "data": {
+                  "type": "object",
+                  "description": "错误时为null",
+                  "properties": {},
+                  "nullable": true
+                }
+              }
+            },
+            "example": {
+              "code": 409,
+              "message": "当前状态不允许该操作",
+              "data": null
+            }
+          }
+        },
+        "headers": {}
+      },
+      "415": {
+        "description": "Content-Type不被当前接口接受。 具体条件见接口业务规则。",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": [
+                "code",
+                "message",
+                "data"
+              ],
+              "properties": {
+                "code": {
+                  "type": "integer"
+                },
+                "message": {
+                  "type": "string"
+                },
+                "data": {
+                  "type": "object",
+                  "description": "错误时为null",
+                  "properties": {},
+                  "nullable": true
+                }
+              }
+            },
+            "example": {
+              "code": 415,
+              "message": "请求Content-Type不受支持",
+              "data": null
+            }
+          }
+        },
+        "headers": {}
+      },
+      "500": {
+        "description": "服务端执行失败；不应作为参数错误的正常处理方式。 具体条件见接口业务规则。",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": [
+                "code",
+                "message",
+                "data"
+              ],
+              "properties": {
+                "code": {
+                  "type": "integer"
+                },
+                "message": {
+                  "type": "string"
+                },
+                "data": {
+                  "type": "object",
+                  "description": "错误时为null",
+                  "properties": {},
+                  "nullable": true
+                }
+              }
+            },
+            "example": {
+              "code": 500,
+              "message": "操作失败，请稍后重试",
+              "data": null
+            }
+          }
+        },
+        "headers": {}
+      }
+    },
+    "security": [],
+    "path": "/api/practice/{accessCode}/repair/orders/{orderId}/return",
+    "method": "PUT",
+    "project": "repair",
+    "group": "orders",
+    "source": {
+      "controller": "RepairController",
+      "file": "src/main/java/com/study/vuePractiseBackend/controller/RepairController.java",
+      "line": 57,
+      "requestModel": "RepairReturnDTO",
+      "responseModel": "RepairOrder"
+    }
+  }
+]
